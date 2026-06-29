@@ -1,0 +1,230 @@
+{
+  "caseName": "A社 — 組織変革",
+  "toolName": "組織変革思考OS",
+  "phenomena": [
+    {
+      "id": "young-turnover",
+      "category": "現象",
+      "label": "若手離職",
+      "note": "3年以内離職率が業界平均を上回る",
+      "scores": {
+        "urgency": 4,
+        "impact": 5,
+        "depth": 5,
+        "accountability": 5,
+        "transformationProgress": 2,
+        "psychologicalSafety": 4
+      },
+      "comment": "コンプラが免罪符として機能している声あり（Pane3 S4）",
+      "pane3Highlight": ["P1", "C1", "C2", "S1", "S2", "S3", "L1"]
+    },
+    {
+      "id": "engagement",
+      "category": "現象",
+      "label": "エンゲージメント低下",
+      "note": "調査スコア2年連続ダウン",
+      "scores": {
+        "urgency": 3,
+        "impact": 5,
+        "depth": 4,
+        "accountability": 4,
+        "transformationProgress": 2,
+        "psychologicalSafety": 4
+      },
+      "pane3Highlight": ["P1", "C1"]
+    },
+    {
+      "id": "order-only",
+      "category": "違和感",
+      "label": "言われたことしかやらない",
+      "note": "指示待ち・提案が出ない",
+      "scores": {
+        "urgency": 2,
+        "impact": 3,
+        "depth": 4,
+        "accountability": 3,
+        "transformationProgress": 3,
+        "psychologicalSafety": 3
+      },
+      "pane3Highlight": ["S3", "C1"]
+    },
+    {
+      "id": "meeting-shirk",
+      "category": "嫌な事象",
+      "label": "会議での責任・仕事の押し付け合い",
+      "note": "決まらない・持ち帰りが多い",
+      "scores": {
+        "urgency": 3,
+        "impact": 4,
+        "depth": 5,
+        "accountability": 5,
+        "transformationProgress": 2,
+        "psychologicalSafety": 3
+      },
+      "pane3Highlight": ["S1", "C2", "L1"]
+    },
+    {
+      "id": "mid-career-burnout",
+      "category": "不具合",
+      "label": "中堅層の育成疲弊",
+      "note": "「育てても評価されない」声",
+      "scores": {
+        "urgency": 2,
+        "impact": 3,
+        "depth": 3,
+        "accountability": 3,
+        "transformationProgress": 3,
+        "psychologicalSafety": 3
+      },
+      "pane3Highlight": ["C1"]
+    }
+  ],
+  "structureNodes": [
+    { "id": "S1", "type": "structure", "label": "責任曖昧", "x": 50, "y": 12 },
+    {
+      "id": "C2",
+      "type": "cause",
+      "label": "会議での責任押付け",
+      "x": 50,
+      "y": 32
+    },
+    {
+      "id": "C1",
+      "type": "cause",
+      "label": "育成機会・裁量不足",
+      "x": 50,
+      "y": 52
+    },
+    { "id": "P1", "type": "phenomenon", "label": "若手離職", "x": 50, "y": 72 },
+    {
+      "id": "S2",
+      "type": "structure",
+      "label": "先送り・なれ合い",
+      "x": 88,
+      "y": 24
+    },
+    {
+      "id": "S3",
+      "type": "structure",
+      "label": "やった者負け",
+      "x": 88,
+      "y": 58
+    },
+    {
+      "id": "S4",
+      "type": "structure",
+      "label": "コンプラ免罪符",
+      "hypothesis": true,
+      "x": 12,
+      "y": 10
+    },
+    {
+      "id": "L1",
+      "type": "leverage",
+      "label": "会議での決裁・役割の明示",
+      "x": 12,
+      "y": 42
+    }
+  ],
+  "structureEdges": [
+    { "from": "S1", "to": "C2", "kind": "reinforce", "strength": "primary" },
+    { "from": "C2", "to": "C1", "kind": "reinforce", "strength": "primary" },
+    { "from": "C1", "to": "P1", "kind": "reinforce", "strength": "primary" },
+    { "from": "S2", "to": "C2", "kind": "reinforce", "strength": "secondary" },
+    { "from": "S3", "to": "C1", "kind": "reinforce", "strength": "secondary" },
+    { "from": "S1", "to": "S2", "kind": "reinforce", "strength": "hypothesis" },
+    { "from": "S4", "to": "S2", "kind": "reinforce", "strength": "hypothesis" },
+    { "from": "L1", "to": "C2", "kind": "inhibit", "strength": "leverage" },
+    { "from": "L1", "to": "S1", "kind": "inhibit", "strength": "leverage-weak" }
+  ],
+  "primaryPath": ["S1", "C2", "C1", "P1"],
+  "nextActionsByPhenomenonId": {
+    "young-turnover": {
+      "leverageLabel": "会議での決裁・役割の明示",
+      "rows": [
+        {
+          "stakeholder": "課長",
+          "question": "会議で「誰が決めるか」が明示されているか。持ち帰りで終わる会議は月何回か",
+          "intent": "★レバレッジの実態把握"
+        },
+        {
+          "stakeholder": "部長",
+          "question": "若手に裁量・育成機会を渡している具体例。評価に反映されているか",
+          "intent": "C1 育成不足の検証"
+        },
+        {
+          "stakeholder": "トップ",
+          "question": "「決めないこと」を組織として許していないか。責任の所在をどう定義するか",
+          "intent": "S1 責任曖昧の打破"
+        }
+      ]
+    },
+    "meeting-shirk": {
+      "leverageLabel": "会議での決裁・役割の明示",
+      "rows": [
+        {
+          "stakeholder": "課長",
+          "question": "会議のアジェンダと決裁ルール。越境問題の止め方",
+          "intent": "★ L1 への直行"
+        },
+        {
+          "stakeholder": "ナンバー2",
+          "question": "部門間の決裁が滞留している事例",
+          "intent": "S1・S2 の可視化"
+        }
+      ]
+    },
+    "order-only": {
+      "leverageLabel": "会議での決裁・役割の明示",
+      "rows": [
+        {
+          "stakeholder": "課長",
+          "question": "挑戦と失敗への反応。やった者負けのエピソード",
+          "intent": "S3 の検証"
+        },
+        {
+          "stakeholder": "担当者",
+          "question": "自分の判断で動いた経験の有無",
+          "intent": "C1 への逆接"
+        }
+      ]
+    },
+    "engagement": {
+      "leverageLabel": "会議での決裁・役割の明示",
+      "rows": [
+        {
+          "stakeholder": "部長",
+          "question": "調査結果と現場の本音のギャップ",
+          "intent": "P1・C1 への接続"
+        },
+        {
+          "stakeholder": "課長",
+          "question": "若手の仕事設計・成長実感",
+          "intent": "主ループの手前"
+        }
+      ]
+    },
+    "mid-career-burnout": {
+      "leverageLabel": "会議での決裁・役割の明示",
+      "rows": [
+        {
+          "stakeholder": "部長",
+          "question": "育成時間の確保と評価の一貫性",
+          "intent": "C1 関連"
+        },
+        {
+          "stakeholder": "中堅（担当）",
+          "question": "「育てても損をする」と感じる理由",
+          "intent": "特筆コメントの深掘り"
+        }
+      ]
+    }
+  },
+  "learnings": [
+    "問題を管理するのではなく、構造を見つけるために画面を設計した",
+    "現象選択 → ハザード地図 → 因果ループ → 次の一手 の連動が、コンサルタントの思考の流れそのものだった",
+    "機能を足すより「何を作らないか」を決めるほうが、提出品質と説明力が上がった",
+    "AIは表・モーダルに逃げがち。地図とループを仕様で先に固定する必要があった",
+    "責任曖昧が育成不足の起点である可能性"
+  ]
+}
