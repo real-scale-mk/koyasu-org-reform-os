@@ -28,8 +28,10 @@ import {
 import { AddItemDialog } from "@/components/workspace/AddItemDialog";
 import { LevelBadge } from "@/components/workspace/LevelBadge";
 import { Pane1Toggle } from "@/components/workspace/Pane1Toggle";
+import { PhenomenonDiagnosticSections } from "@/components/workspace/PhenomenonDiagnosticSections";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { sortPhenomenaForDisplay } from "@/lib/koyasu/phenomenon-workspace-data";
 
 const paneSectionLabelClass =
   "h-auto px-2 py-1 text-sm font-bold text-sidebar-foreground";
@@ -37,6 +39,8 @@ const paneSectionLabelClass =
 type PhenomenonA00PaneProps = {
   toolName: string;
   caseA00: string;
+  phenomenonCasePolaris: string;
+  phenomenonTargetState: string;
   phenomena: Phenomenon[];
   selectedPhenomenonId: string;
   onSelectPhenomenon: (id: string) => void;
@@ -53,6 +57,8 @@ type PhenomenonA00PaneProps = {
 export function PhenomenonA00Pane({
   toolName,
   caseA00,
+  phenomenonCasePolaris,
+  phenomenonTargetState,
   phenomena,
   selectedPhenomenonId,
   onSelectPhenomenon,
@@ -62,6 +68,10 @@ export function PhenomenonA00Pane({
 }: PhenomenonA00PaneProps) {
   const [addOpen, setAddOpen] = useState(false);
   const selected = phenomena.find((p) => p.id === selectedPhenomenonId);
+  const sortedPhenomena = useMemo(
+    () => sortPhenomenaForDisplay(phenomena),
+    [phenomena],
+  );
 
   return (
     <>
@@ -79,19 +89,28 @@ export function PhenomenonA00Pane({
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupLabel className={paneSectionLabelClass}>
-              案件 POLARIS
+              案件POLARIS（案件全体の目指す姿）
             </SidebarGroupLabel>
             <SidebarGroupContent className="px-2 group-data-[collapsible=icon]:hidden">
               <Card>
                 <CardHeader className="flex flex-col gap-1 p-3 pb-0">
                   <CardTitle className="text-base font-bold tracking-wide">
-                    POLARIS
+                    案件POLARIS
                   </CardTitle>
                   <p className="text-[11px] text-muted-foreground">
-                    案件のA00 / 目指す姿
+                    案件全体の目指す姿
                   </p>
                 </CardHeader>
-                <CardContent className="p-3 pt-2">
+                <CardContent className="flex flex-col gap-2 p-3 pt-2">
+                  <p className="text-[10px] font-medium text-muted-foreground">
+                    この現象のPOLARIS視点
+                  </p>
+                  <p className="text-sm leading-relaxed text-sidebar-foreground">
+                    {phenomenonCasePolaris}
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    案件共通（編集可）
+                  </p>
                   <InlineTextareaField
                     value={caseA00}
                     onSave={onUpdateCaseA00}
@@ -109,7 +128,7 @@ export function PhenomenonA00Pane({
             </SidebarGroupLabel>
             <SidebarGroupContent className="px-1">
               <SidebarMenu>
-                {phenomena.map((p) => {
+                {sortedPhenomena.map((p) => {
                   const isSelected = p.id === selectedPhenomenonId;
                   return (
                     <SidebarMenuItem key={p.id}>
@@ -142,13 +161,9 @@ export function PhenomenonA00Pane({
                 </p>
                 <dl className="flex flex-col gap-3 text-sm">
                   <InlineFieldRow label="目指す姿 / Target State">
-                    <InlineTextareaField
-                      value={selected.target_state}
-                      onSave={(v) =>
-                        onUpdatePhenomenon(selected.id, { target_state: v })
-                      }
-                      ariaLabel="目指す姿"
-                    />
+                    <p className="rounded-lg border border-border bg-muted/30 px-2.5 py-2 text-sm leading-relaxed text-sidebar-foreground">
+                      {phenomenonTargetState}
+                    </p>
                   </InlineFieldRow>
                   <InlineFieldRow label="重要度">
                     <div className="flex flex-col gap-2">
@@ -187,6 +202,7 @@ export function PhenomenonA00Pane({
                     />
                   </InlineFieldRow>
                 </dl>
+                <PhenomenonDiagnosticSections phenomenonId={selected.id} />
               </SidebarGroupContent>
             </SidebarGroup>
           ) : (

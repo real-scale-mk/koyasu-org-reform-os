@@ -3,10 +3,10 @@
 /**
  * 小安式 組織改革OS — 4ペイン Workspace
  *
- * Pane1: 現象とA00（Sidebar）
+ * Pane1: 診断ワークスペース
  * Pane2: 構造分析
- * Pane3: レバレッジと打ち手
- * Pane4: 学びと成果
+ * Pane3: 改革戦略設計
+ * Pane4: SKILL資産化
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,16 +16,15 @@ import {
   type KoyasuCaseSeed,
   type Phenomenon,
 } from "@/lib/koyasu/schema";
-import {
-  loadCaseStorage,
-  loadLearningStorage,
-  saveCaseStorage,
-  saveLearningStorage,
-} from "@/lib/koyasu/storage";
+import { getPrimaryInterventionStructureForPhenomenon } from "@/lib/koyasu/phenomenon-diagnostics";
+import { getReformStrategyDesign } from "@/lib/koyasu/reform-strategies";
+import { getSkillAssetization } from "@/lib/koyasu/skill-assetization";
+import { getPhenomenonWorkspaceBundle } from "@/lib/koyasu/phenomenon-workspace-data";
+import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { KoyasuGlobalHeader } from "@/components/workspace/KoyasuGlobalHeader";
-import { LearningOutcomePane } from "@/components/workspace/LearningOutcomePane";
-import { LeverageActionPane } from "@/components/workspace/LeverageActionPane";
+import { SkillAssetizationPane } from "@/components/workspace/LearningOutcomePane";
+import { ReformStrategyDesignPane } from "@/components/workspace/LeverageActionPane";
 import { PhenomenonA00Pane } from "@/components/workspace/PhenomenonA00Pane";
 import { StructureAnalysisPane } from "@/components/workspace/StructureAnalysisPane";
 
@@ -47,7 +46,6 @@ function useDebouncedEffect(
 
 export function Workspace({ seed }: WorkspaceProps) {
   const initialCase = useMemo(() => loadCaseStorage(seed), [seed]);
-  const initialLearning = useMemo(() => loadLearningStorage(seed), [seed]);
 
   const [caseA00, setCaseA00] = useState(initialCase.case_a00);
   const [selectedPhenomenonId, setSelectedPhenomenonId] = useState(
@@ -56,15 +54,9 @@ export function Workspace({ seed }: WorkspaceProps) {
   const [phenomena, setPhenomena] = useState<Phenomenon[]>(
     initialCase.phenomena,
   );
-  const [insightsByPhenomenonId, setInsightsByPhenomenonId] = useState(
-    initialLearning.insightsByPhenomenonId,
-  );
-  const [skillCandidatesByPhenomenonId, setSkillCandidatesByPhenomenonId] =
-    useState(initialLearning.skillCandidatesByPhenomenonId);
   const [pane4Open, setPane4Open] = useState(true);
 
   const casePersistReady = useRef(false);
-  const learningPersistReady = useRef(false);
 
   useDebouncedEffect(
     () => {
@@ -79,20 +71,6 @@ export function Workspace({ seed }: WorkspaceProps) {
       });
     },
     [caseA00, selectedPhenomenonId, phenomena],
-  );
-
-  useDebouncedEffect(
-    () => {
-      if (!learningPersistReady.current) {
-        learningPersistReady.current = true;
-        return;
-      }
-      saveLearningStorage({
-        insightsByPhenomenonId,
-        skillCandidatesByPhenomenonId,
-      });
-    },
-    [insightsByPhenomenonId, skillCandidatesByPhenomenonId],
   );
 
   const selectedPhenomenon = useMemo(
@@ -111,18 +89,34 @@ export function Workspace({ seed }: WorkspaceProps) {
     [seed.relevanceByPhenomenonId, selectedPhenomenon?.id],
   );
 
-  const leverage = useMemo(
+  const primaryIntervention = useMemo(
     () =>
-      seed.leverageByPhenomenonId[selectedPhenomenon?.id ?? ""] ??
-      seed.leverageByPhenomenonId[DEFAULT_PHENOMENON_ID],
-    [seed.leverageByPhenomenonId, selectedPhenomenon?.id],
+      getPrimaryInterventionStructureForPhenomenon(
+        selectedPhenomenon?.id ?? DEFAULT_PHENOMENON_ID,
+      ),
+    [selectedPhenomenon?.id],
   );
 
-  const outcomeSeed = useMemo(
+  const reformStrategyDesign = useMemo(
     () =>
-      seed.outcomesByPhenomenonId[selectedPhenomenon?.id ?? ""] ??
-      seed.outcomesByPhenomenonId[DEFAULT_PHENOMENON_ID],
-    [seed.outcomesByPhenomenonId, selectedPhenomenon?.id],
+      getReformStrategyDesign(
+        selectedPhenomenon?.id ?? DEFAULT_PHENOMENON_ID,
+        primaryIntervention.structure.id,
+      ),
+    [selectedPhenomenon?.id, primaryIntervention.structure.id],
+  );
+
+  const phenomenonWorkspace = useMemo(
+    () =>
+      getPhenomenonWorkspaceBundle(
+        selectedPhenomenon?.id ?? DEFAULT_PHENOMENON_ID,
+      ),
+    [selectedPhenomenon?.id],
+  );
+
+  const skillAssetization = useMemo(
+    () => getSkillAssetization(selectedPhenomenon?.id ?? DEFAULT_PHENOMENON_ID),
+    [selectedPhenomenon?.id],
   );
 
   const selectPhenomenon = useCallback((id: string) => {
@@ -159,59 +153,13 @@ export function Workspace({ seed }: WorkspaceProps) {
     };
     setPhenomena((prev) => [...prev, next]);
     setSelectedPhenomenonId(id);
-    setInsightsByPhenomenonId((prev) => ({ ...prev, [id]: [] }));
-    setSkillCandidatesByPhenomenonId((prev) => ({ ...prev, [id]: [] }));
   }, []);
-
-  const updateInsight = useCallback(
-    (index: number, value: string) => {
-      const id = selectedPhenomenon?.id;
-      if (!id) return;
-      setInsightsByPhenomenonId((prev) => {
-        const items = [...(prev[id] ?? [])];
-        items[index] = value;
-        return { ...prev, [id]: items };
-      });
-    },
-    [selectedPhenomenon?.id],
-  );
-
-  const updateSkillCandidate = useCallback(
-    (index: number, value: string) => {
-      const id = selectedPhenomenon?.id;
-      if (!id) return;
-      setSkillCandidatesByPhenomenonId((prev) => {
-        const items = [...(prev[id] ?? [])];
-        items[index] = value;
-        return { ...prev, [id]: items };
-      });
-    },
-    [selectedPhenomenon?.id],
-  );
-
-  const addInsight = useCallback(() => {
-    const id = selectedPhenomenon?.id;
-    if (!id) return;
-    setInsightsByPhenomenonId((prev) => ({
-      ...prev,
-      [id]: [...(prev[id] ?? []), ""],
-    }));
-  }, [selectedPhenomenon?.id]);
-
-  const addSkillCandidate = useCallback(() => {
-    const id = selectedPhenomenon?.id;
-    if (!id) return;
-    setSkillCandidatesByPhenomenonId((prev) => ({
-      ...prev,
-      [id]: [...(prev[id] ?? []), ""],
-    }));
-  }, [selectedPhenomenon?.id]);
 
   const togglePane4 = useCallback(() => {
     setPane4Open((v) => !v);
   }, []);
 
-  if (!selectedPhenomenon || !leverage || !outcomeSeed) {
+  if (!selectedPhenomenon) {
     return null;
   }
 
@@ -223,6 +171,8 @@ export function Workspace({ seed }: WorkspaceProps) {
       <PhenomenonA00Pane
         toolName={seed.toolName}
         caseA00={caseA00}
+        phenomenonCasePolaris={phenomenonWorkspace.casePolaris}
+        phenomenonTargetState={phenomenonWorkspace.targetState}
         phenomena={phenomena}
         selectedPhenomenonId={selectedPhenomenonId}
         onSelectPhenomenon={selectPhenomenon}
@@ -238,29 +188,21 @@ export function Workspace({ seed }: WorkspaceProps) {
         <div className="flex min-h-0 flex-1">
           <StructureAnalysisPane
             selectedPhenomenon={selectedPhenomenon}
+            primaryIntervention={primaryIntervention}
             perspectives={seed.perspectives}
             perspectiveDetails={seed.perspectiveDetails}
             relevanceMap={relevanceMap}
           />
-          <LeverageActionPane
+          <ReformStrategyDesignPane
             selectedPhenomenon={selectedPhenomenon}
-            leverage={leverage}
+            primaryIntervention={primaryIntervention}
+            design={reformStrategyDesign}
           />
-          <LearningOutcomePane
+          <SkillAssetizationPane
             selectedPhenomenon={selectedPhenomenon}
-            executionResults={outcomeSeed.executionResults}
-            outcomes={outcomeSeed.outcomes}
-            insights={insightsByPhenomenonId[selectedPhenomenon.id] ?? []}
-            skillCandidates={
-              skillCandidatesByPhenomenonId[selectedPhenomenon.id] ?? []
-            }
-            placeholder={outcomeSeed.placeholder ?? false}
+            assetization={skillAssetization}
             pane4Open={pane4Open}
             onTogglePane4={togglePane4}
-            onUpdateInsight={updateInsight}
-            onUpdateSkillCandidate={updateSkillCandidate}
-            onAddInsight={addInsight}
-            onAddSkillCandidate={addSkillCandidate}
           />
         </div>
       </SidebarInset>

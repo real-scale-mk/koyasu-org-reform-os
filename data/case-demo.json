@@ -13,18 +13,10 @@
       "memo": ""
     },
     {
-      "id": "silo-culture",
-      "label": "他人事文化",
-      "target_state": "部門横断で問題を共有できる",
+      "id": "major-order-loss",
+      "label": "大型案件逸注",
+      "target_state": "大型案件の受注率が計画値を上回る",
       "importance": "高",
-      "status": "未着手",
-      "memo": ""
-    },
-    {
-      "id": "tech-transfer-gap",
-      "label": "技術伝承不足",
-      "target_state": "ベテラン知見が若手に渡る",
-      "importance": "中",
       "status": "未着手",
       "memo": ""
     },
@@ -34,6 +26,30 @@
       "target_state": "再発防止が現場で回る",
       "importance": "中",
       "status": "未着手",
+      "memo": ""
+    },
+    {
+      "id": "defect-resolution-delay",
+      "label": "不具合解決長期化",
+      "target_state": "不具合解決リードタイムが目標内に収まる",
+      "importance": "高",
+      "status": "分析中",
+      "memo": ""
+    },
+    {
+      "id": "manager-distrust",
+      "label": "管理職への不信",
+      "target_state": "現場が管理職に相談・報告しやすい",
+      "importance": "高",
+      "status": "未着手",
+      "memo": ""
+    },
+    {
+      "id": "indecisive-meetings",
+      "label": "決めない会議",
+      "target_state": "会議で決裁が明示され、持ち帰りが減る",
+      "importance": "高",
+      "status": "介入中",
       "memo": ""
     }
   ],
@@ -50,7 +66,7 @@
     },
     {
       "id": "meetings",
-      "label": "会議構造",
+      "label": "会議運営ルール",
       "summary": "決裁と持ち帰りのパターン"
     },
     {
@@ -84,9 +100,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "若手が他部門の問題を見ても「うちの管轄外」と感じ、改善提案が止まる場面がある。",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     },
     "accountability": {
@@ -98,9 +116,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "会議で「検討します」で終わり、若手が次のアクションを見失う。",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     },
     "meetings": {
@@ -112,9 +132,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "定例会で決裁者が曖昧なまま議論が長引き、若手の提案が宙に浮く。",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     },
     "evaluation": {
@@ -126,9 +148,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "若手の越界改善提案が評価に結びつかず、離職意向につながる。",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     },
     "tech-transfer": {
@@ -140,9 +164,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "（準備中）",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     },
     "psych-safety": {
@@ -154,9 +180,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "若手が会議で反対意見を言いにくく、表面合意で終わる。",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     },
     "manager-behavior": {
@@ -168,9 +196,11 @@
       ],
       "examplesByPhenomenonId": {
         "young-turnover": "課長が会議で決裁者を明示せず、若手に「上に確認して」と押し返す。",
-        "silo-culture": "（準備中）",
-        "tech-transfer-gap": "（準備中）",
-        "defect-frequency": "（準備中）"
+        "major-order-loss": "（準備中）",
+        "defect-frequency": "（準備中）",
+        "defect-resolution-delay": "（準備中）",
+        "manager-distrust": "（準備中）",
+        "indecisive-meetings": "（準備中）"
       }
     }
   },
@@ -184,23 +214,14 @@
       "psych-safety": "中",
       "manager-behavior": "高"
     },
-    "silo-culture": {
-      "people": "高",
-      "accountability": "中",
-      "meetings": "中",
+    "major-order-loss": {
+      "people": "中",
+      "accountability": "高",
+      "meetings": "高",
       "evaluation": "中",
       "tech-transfer": "低",
-      "psych-safety": "中",
-      "manager-behavior": "中"
-    },
-    "tech-transfer-gap": {
-      "people": "中",
-      "accountability": "低",
-      "meetings": "低",
-      "evaluation": "中",
-      "tech-transfer": "高",
-      "psych-safety": "中",
-      "manager-behavior": "中"
+      "psych-safety": "低",
+      "manager-behavior": "高"
     },
     "defect-frequency": {
       "people": "中",
@@ -209,6 +230,33 @@
       "evaluation": "中",
       "tech-transfer": "中",
       "psych-safety": "低",
+      "manager-behavior": "高"
+    },
+    "defect-resolution-delay": {
+      "people": "中",
+      "accountability": "高",
+      "meetings": "中",
+      "evaluation": "中",
+      "tech-transfer": "中",
+      "psych-safety": "中",
+      "manager-behavior": "高"
+    },
+    "manager-distrust": {
+      "people": "高",
+      "accountability": "中",
+      "meetings": "中",
+      "evaluation": "高",
+      "tech-transfer": "低",
+      "psych-safety": "高",
+      "manager-behavior": "高"
+    },
+    "indecisive-meetings": {
+      "people": "中",
+      "accountability": "高",
+      "meetings": "高",
+      "evaluation": "中",
+      "tech-transfer": "低",
+      "psych-safety": "中",
       "manager-behavior": "高"
     }
   },
@@ -237,13 +285,7 @@
         }
       ]
     },
-    "silo-culture": {
-      "label": "（準備中）",
-      "connection": "この現象のレバレッジ分析は準備中です",
-      "actions": [],
-      "placeholder": true
-    },
-    "tech-transfer-gap": {
+    "major-order-loss": {
       "label": "（準備中）",
       "connection": "この現象のレバレッジ分析は準備中です",
       "actions": [],
@@ -254,6 +296,36 @@
       "connection": "この現象のレバレッジ分析は準備中です",
       "actions": [],
       "placeholder": true
+    },
+    "defect-resolution-delay": {
+      "label": "（準備中）",
+      "connection": "この現象のレバレッジ分析は準備中です",
+      "actions": [],
+      "placeholder": true
+    },
+    "manager-distrust": {
+      "label": "（準備中）",
+      "connection": "この現象のレバレッジ分析は準備中です",
+      "actions": [],
+      "placeholder": true
+    },
+    "indecisive-meetings": {
+      "label": "会議での決裁・役割の明示",
+      "connection": "決めない会議 → 責任曖昧の悪循環を止める",
+      "actions": [
+        {
+          "id": "agenda-rule",
+          "label": "アジェンダと決裁事項の事前共有",
+          "why": "会議前に決めるべきことを固定するため",
+          "summary": "定例会前日に決裁事項リストを配布する"
+        },
+        {
+          "id": "carryover-log",
+          "label": "持ち帰り理由の可視化",
+          "why": "構造的な先送りを見える化するため",
+          "summary": "持ち帰り理由を記録し、月次でレビューする"
+        }
+      ]
     }
   },
   "outcomesByPhenomenonId": {
@@ -272,14 +344,7 @@
         "会議観察チェックリスト：決裁者明示 / 持ち帰り回数 / 越境問題の止め方"
       ]
     },
-    "silo-culture": {
-      "executionResults": [],
-      "outcomes": [],
-      "insights": [],
-      "skillCandidates": [],
-      "placeholder": true
-    },
-    "tech-transfer-gap": {
+    "major-order-loss": {
       "executionResults": [],
       "outcomes": [],
       "insights": [],
@@ -287,6 +352,27 @@
       "placeholder": true
     },
     "defect-frequency": {
+      "executionResults": [],
+      "outcomes": [],
+      "insights": [],
+      "skillCandidates": [],
+      "placeholder": true
+    },
+    "defect-resolution-delay": {
+      "executionResults": [],
+      "outcomes": [],
+      "insights": [],
+      "skillCandidates": [],
+      "placeholder": true
+    },
+    "manager-distrust": {
+      "executionResults": [],
+      "outcomes": [],
+      "insights": [],
+      "skillCandidates": [],
+      "placeholder": true
+    },
+    "indecisive-meetings": {
       "executionResults": [],
       "outcomes": [],
       "insights": [],
