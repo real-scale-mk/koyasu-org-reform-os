@@ -23,6 +23,8 @@ export const PHENOMENON_DISPLAY_ORDER = [
   "manager-distrust",
 ] as const;
 
+export type PhenomenonId = (typeof PHENOMENON_DISPLAY_ORDER)[number];
+
 export type CaseWorkspaceCatalog = {
   caseId: string;
   caseName: string;
@@ -95,10 +97,10 @@ export function getCaseWorkspaceCatalog(): CaseWorkspaceCatalog {
   return CASE_WORKSPACE_CATALOG;
 }
 
-export function sortPhenomenaForDisplay<T extends { id: string }>(
+export function sortPhenomenaForDisplay<T extends { id: PhenomenonId }>(
   items: T[],
 ): T[] {
-  const order = new Map(
+  const order = new Map<PhenomenonId, number>(
     PHENOMENON_DISPLAY_ORDER.map((id, index) => [id, index]),
   );
   return [...items].sort(

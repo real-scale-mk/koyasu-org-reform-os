@@ -31,7 +31,7 @@ import { Pane1Toggle } from "@/components/workspace/Pane1Toggle";
 import { PhenomenonDiagnosticSections } from "@/components/workspace/PhenomenonDiagnosticSections";
 import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
-import { sortPhenomenaForDisplay } from "@/lib/koyasu/phenomenon-workspace-data";
+import { sortPhenomenaForDisplay, type PhenomenonId } from "@/lib/koyasu/phenomenon-workspace-data";
 
 const paneSectionLabelClass =
   "h-auto px-2 py-1 text-sm font-bold text-sidebar-foreground";
@@ -69,7 +69,10 @@ export function PhenomenonA00Pane({
   const [addOpen, setAddOpen] = useState(false);
   const selected = phenomena.find((p) => p.id === selectedPhenomenonId);
   const sortedPhenomena = useMemo(
-    () => sortPhenomenaForDisplay(phenomena),
+    () =>
+      sortPhenomenaForDisplay(
+        phenomena as Array<Phenomenon & { id: PhenomenonId }>,
+      ),
     [phenomena],
   );
 
