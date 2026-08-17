@@ -12,8 +12,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
+  DEFAULT_PANE1_INTAKE,
   DEFAULT_PHENOMENON_ID,
   type KoyasuCaseSeed,
+  type Pane1Intake,
   type Phenomenon,
 } from "@/lib/koyasu/schema";
 import { getPrimaryInterventionStructureForPhenomenon } from "@/lib/koyasu/phenomenon-diagnostics";
@@ -45,32 +47,52 @@ function useDebouncedEffect(
 }
 
 export function Workspace({ seed }: WorkspaceProps) {
-  const initialCase = useMemo(() => loadCaseStorage(seed), [seed]);
-
-  const [caseA00, setCaseA00] = useState(initialCase.case_a00);
+  // 初回レンダーは常に seed のみ（SSR / hydration で localStorage を読まない）
+  const [caseA00, setCaseA00] = useState(seed.case_a00);
   const [selectedPhenomenonId, setSelectedPhenomenonId] = useState(
-    initialCase.selected_phenomenon_id,
+    seed.selected_phenomenon_id,
   );
-  const [phenomena, setPhenomena] = useState<Phenomenon[]>(
-    initialCase.phenomena,
-  );
+  const [phenomena, setPhenomena] = useState<Phenomenon[]>(seed.phenomena);
+  const [pane1Intake, setPane1Intake] =
+    useState<Pane1Intake>(DEFAULT_PANE1_INTAKE);
+  // Inline* は defaultValue のため、復元後に key を更新してリマウントする
+  const [intakeFormKey, setIntakeFormKey] = useState(0);
   const [pane4Open, setPane4Open] = useState(true);
 
+  // 復元完了まで true にしない（seed での保存データ上書きを防ぐ）
   const casePersistReady = useRef(false);
+
+  useEffect(() => {
+    casePersistReady.current = false;
+    const stored = loadCaseStorage(seed);
+    // mount 後コールバックで反映（初回レンダーは seed のまま hydration を一致させる）
+    const id = window.setTimeout(() => {
+      setCaseA00(stored.case_a00);
+      setSelectedPhenomenonId(stored.selected_phenomenon_id);
+      setPhenomena(stored.phenomena);
+      setPane1Intake(stored.pane1_intake);
+      setIntakeFormKey((key) => key + 1);
+      casePersistReady.current = true;
+    }, 0);
+    return () => {
+      window.clearTimeout(id);
+      casePersistReady.current = false;
+    };
+  }, [seed]);
 
   useDebouncedEffect(
     () => {
       if (!casePersistReady.current) {
-        casePersistReady.current = true;
         return;
       }
       saveCaseStorage({
         case_a00: caseA00,
         selected_phenomenon_id: selectedPhenomenonId,
         phenomena,
+        pane1_intake: pane1Intake,
       });
     },
-    [caseA00, selectedPhenomenonId, phenomena],
+    [caseA00, selectedPhenomenonId, phenomena, pane1Intake],
   );
 
   const selectedPhenomenon = useMemo(
@@ -127,6 +149,10 @@ export function Workspace({ seed }: WorkspaceProps) {
     setCaseA00(value);
   }, []);
 
+  const updatePane1Intake = useCallback((patch: Partial<Pane1Intake>) => {
+    setPane1Intake((prev) => ({ ...prev, ...patch }));
+  }, []);
+
   const updatePhenomenon = useCallback(
     (
       id: string,
@@ -175,8 +201,11 @@ export function Workspace({ seed }: WorkspaceProps) {
         phenomenonTargetState={phenomenonWorkspace.targetState}
         phenomena={phenomena}
         selectedPhenomenonId={selectedPhenomenonId}
+        pane1Intake={pane1Intake}
+        intakeFormKey={intakeFormKey}
         onSelectPhenomenon={selectPhenomenon}
         onUpdateCaseA00={updateCaseA00}
+        onUpdatePane1Intake={updatePane1Intake}
         onUpdatePhenomenon={updatePhenomenon}
         onAddPhenomenon={addPhenomenon}
       />

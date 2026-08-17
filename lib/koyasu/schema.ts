@@ -83,13 +83,65 @@ export const koyasuCaseSeedSchema = z.object({
 
 export type KoyasuCaseSeed = z.infer<typeof koyasuCaseSeedSchema>;
 
+/**
+ * Pane1 V1 取込データ（違和感 → 現象整理 → AS IS / TO BE → GAP → 案件化）。
+ * 意味上の順序: AS IS と TO BE を決め、その差が GAP。
+ * A00（case_a00）はここには含めない。
+ */
+export const DEFAULT_PANE1_INTAKE = {
+  discomfort: "",
+  core_phenomenon: "",
+  surface_phenomena: [] as string[],
+  facts: "",
+  hypotheses: "",
+  as_is: "",
+  to_be: "",
+  gap: "",
+  case_name: "",
+  target_org: "",
+  target_context: "",
+  stakeholders: "",
+  scope_in: "",
+  scope_out: "",
+};
+
+export const pane1IntakeSchema = z.object({
+  discomfort: z.string().default(""),
+  core_phenomenon: z.string().default(""),
+  // 想定最大3件。超過分は切り捨てて旧データの parse 失敗を避ける
+  surface_phenomena: z
+    .array(z.string())
+    .default([])
+    .transform((items) => items.slice(0, 3)),
+  facts: z.string().default(""),
+  hypotheses: z.string().default(""),
+  as_is: z.string().default(""),
+  to_be: z.string().default(""),
+  gap: z.string().default(""),
+  case_name: z.string().default(""),
+  target_org: z.string().default(""),
+  target_context: z.string().default(""),
+  stakeholders: z.string().default(""),
+  scope_in: z.string().default(""),
+  scope_out: z.string().default(""),
+});
+
+export type Pane1Intake = z.infer<typeof pane1IntakeSchema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
   phenomena: z.array(phenomenonSchema),
+  // 旧 koyasu:case:v1 に無い場合は default（全体の safeParse を落とさない）
+  pane1_intake: pane1IntakeSchema.default(DEFAULT_PANE1_INTAKE),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
+
+/** Workspace 等、pane1_intake 未送信の書き込み用（省略時は storage 側で保持/default） */
+export type CaseStorageWrite = Omit<CaseStorage, "pane1_intake"> & {
+  pane1_intake?: Pane1Intake;
+};
 
 export const learningStorageSchema = z.object({
   insightsByPhenomenonId: z.record(z.string(), z.array(z.string())),

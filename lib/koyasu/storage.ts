@@ -1,9 +1,12 @@
 import {
   caseStorageSchema,
+  DEFAULT_PANE1_INTAKE,
   learningStorageSchema,
   type CaseStorage,
+  type CaseStorageWrite,
   type KoyasuCaseSeed,
   type LearningStorage,
+  type Pane1Intake,
 } from "@/lib/koyasu/schema";
 
 export const CASE_STORAGE_KEY = "koyasu:case:v1";
@@ -23,17 +26,24 @@ function readJson<T>(
   }
 }
 
+function parseCaseStorage(value: unknown): CaseStorage | null {
+  const result = caseStorageSchema.safeParse(value);
+  return result.success ? result.data : null;
+}
+
+function readStoredCase(): CaseStorage | null {
+  return readJson(CASE_STORAGE_KEY, parseCaseStorage);
+}
+
 export function loadCaseStorage(seed: KoyasuCaseSeed): CaseStorage {
-  const stored = readJson(CASE_STORAGE_KEY, (value) => {
-    const result = caseStorageSchema.safeParse(value);
-    return result.success ? result.data : null;
-  });
+  const stored = readStoredCase();
 
   if (!stored) {
     return {
       case_a00: seed.case_a00,
       selected_phenomenon_id: seed.selected_phenomenon_id,
       phenomena: seed.phenomena,
+      pane1_intake: DEFAULT_PANE1_INTAKE,
     };
   }
 
@@ -51,6 +61,7 @@ export function loadCaseStorage(seed: KoyasuCaseSeed): CaseStorage {
     case_a00: stored.case_a00,
     selected_phenomenon_id: stored.selected_phenomenon_id,
     phenomena: mergedPhenomena,
+    pane1_intake: stored.pane1_intake,
   };
 }
 
@@ -78,9 +89,25 @@ export function loadLearningStorage(seed: KoyasuCaseSeed): LearningStorage {
   return { insightsByPhenomenonId, skillCandidatesByPhenomenonId };
 }
 
-export function saveCaseStorage(data: CaseStorage): void {
+/**
+ * pane1_intake 省略時は既存 localStorage の値を維持し、無ければ default。
+ * Workspace が従来どおり3フィールドだけ渡しても、将来の intake を消さない。
+ */
+export function saveCaseStorage(data: CaseStorageWrite): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify(data));
+
+  const existing = readStoredCase();
+  const pane1_intake: Pane1Intake =
+    data.pane1_intake ?? existing?.pane1_intake ?? DEFAULT_PANE1_INTAKE;
+
+  const next: CaseStorage = {
+    case_a00: data.case_a00,
+    selected_phenomenon_id: data.selected_phenomenon_id,
+    phenomena: data.phenomena,
+    pane1_intake,
+  };
+
+  window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify(next));
 }
 
 export function saveLearningStorage(data: LearningStorage): void {
