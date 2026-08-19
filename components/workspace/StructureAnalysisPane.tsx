@@ -7,10 +7,12 @@ import {
   type Pane1Intake,
   type Pane2Hypothesis,
   type Pane2Step1,
+  type Pane2Step2,
   type Perspective,
   type PerspectiveDetail,
   type Phenomenon,
   type Relevance,
+  type ResponsibilityChainTransitionId,
 } from "@/lib/koyasu/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,6 +28,7 @@ import {
 import { InlineTextareaField, SectionLabel } from "@/components/primitives";
 import { LevelBadge } from "@/components/workspace/LevelBadge";
 import { MeetingStructureDiagram } from "@/components/workspace/MeetingStructureDiagram";
+import { ResponsibilityChainBreaks } from "@/components/workspace/ResponsibilityChainBreaks";
 import { type PrimaryInterventionContext } from "@/lib/koyasu/phenomenon-diagnostics";
 import {
   getStructureFormingElements,
@@ -38,6 +41,7 @@ type StructureAnalysisPaneProps = {
   selectedPhenomenon: Phenomenon;
   pane1Intake: Pane1Intake;
   pane2Step1: Pane2Step1;
+  pane2Step2: Pane2Step2;
   pane2FormKey: number;
   primaryIntervention: PrimaryInterventionContext;
   perspectives: Perspective[];
@@ -46,6 +50,13 @@ type StructureAnalysisPaneProps = {
   onUpdatePane2Hypothesis: (
     index: number,
     patch: Partial<Pane2Hypothesis>,
+  ) => void;
+  onTogglePane2ChainBreak: (
+    transitionId: ResponsibilityChainTransitionId,
+  ) => void;
+  onUpdatePane2ChainBreakMemo: (
+    transitionId: ResponsibilityChainTransitionId,
+    memo: string,
   ) => void;
 };
 
@@ -88,12 +99,15 @@ export function StructureAnalysisPane({
   selectedPhenomenon,
   pane1Intake,
   pane2Step1,
+  pane2Step2,
   pane2FormKey,
   primaryIntervention,
   perspectives,
   perspectiveDetails: _perspectiveDetails,
   relevanceMap,
   onUpdatePane2Hypothesis,
+  onTogglePane2ChainBreak,
+  onUpdatePane2ChainBreakMemo,
 }: StructureAnalysisPaneProps) {
   const [mapOpenForElementId, setMapOpenForElementId] = useState<string | null>(
     null,
@@ -190,6 +204,18 @@ export function StructureAnalysisPane({
                   ))}
                 </div>
               </div>
+            </AnalysisSection>
+
+            <AnalysisSection
+              title="Pane2 Step2 | 責任連鎖のどこで切れているか"
+              description="個人の責任ではなく、業務プロセスのどの接続点で連鎖が途切れているかを可視化します。"
+            >
+              <ResponsibilityChainBreaks
+                pane2Step2={pane2Step2}
+                pane2FormKey={pane2FormKey}
+                onToggleBreak={onTogglePane2ChainBreak}
+                onUpdateBreakMemo={onUpdatePane2ChainBreakMemo}
+              />
             </AnalysisSection>
 
             <Card className="border-primary/30 bg-primary/5">

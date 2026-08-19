@@ -4,6 +4,7 @@ import {
   caseStorageSchema,
   DEFAULT_PANE1_INTAKE,
   DEFAULT_PANE2_STEP1_HYPOTHESES,
+  DEFAULT_PANE2_STEP2,
   type KoyasuCaseSeed,
 } from "@/lib/koyasu/schema";
 import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
@@ -51,6 +52,7 @@ describe("caseStorageSchema pane1/pane2 後方互換", () => {
     expect(result.data.pane2_step1).toEqual({
       hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
     });
+    expect(result.data.pane2_step2).toEqual(DEFAULT_PANE2_STEP2);
   });
 
   it("部分的な pane1_intake は欠落フィールドを default で補完する", () => {
@@ -175,5 +177,64 @@ describe("loadCaseStorage / saveCaseStorage pane2_step1", () => {
       follow_up_question: "誰が最終判断を持っているか",
     });
     expect(loaded.pane2_step1.hypotheses).toHaveLength(3);
+  });
+
+  it("Pane2-Step2 の断絶点とメモを保存後に再読込しても pane1/pane2_step1 を壊さない", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane1_intake: {
+        ...DEFAULT_PANE1_INTAKE,
+        gap: "責任連鎖が成立していない",
+      },
+      pane2_step1: {
+        hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+      },
+      pane2_step2: {
+        breaks: [
+          { transition_id: "2-3", memo: "共有後に推進責任者が決まらない" },
+          { transition_id: "5-6", memo: "意思決定が遅れ実行が止まる" },
+        ],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane1_intake.gap).toBe("責任連鎖が成立していない");
+    expect(loaded.pane2_step2.breaks).toEqual([
+      { transition_id: "2-3", memo: "共有後に推進責任者が決まらない" },
+      { transition_id: "5-6", memo: "意思決定が遅れ実行が止まる" },
+    ]);
+  });
+
+  it("pane2_step2 省略保存時は既存 localStorage の値を維持する", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane2_step2: {
+        breaks: [{ transition_id: "3-4", memo: "担当が曖昧" }],
+      },
+    });
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane1_intake: {
+        ...DEFAULT_PANE1_INTAKE,
+        core_phenomenon: "更新後",
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane1_intake.core_phenomenon).toBe("更新後");
+    expect(loaded.pane2_step2.breaks).toEqual([
+      { transition_id: "3-4", memo: "担当が曖昧" },
+    ]);
   });
 });

@@ -81,6 +81,7 @@ describe("workspace-ui-kit smoke tests", () => {
       });
 
       expect(container.textContent).toContain("なぜ、このGAPが繰り返し生まれるのか？");
+      expect(container.textContent).toContain("責任連鎖のどこで切れているか");
       expect(container.textContent).toContain("若手が育つ前に離職してしまう");
       expect(container.textContent).toContain(
         "育成の意図はあるのに、現場で機能不全が繰り返される",
@@ -99,6 +100,11 @@ describe("workspace-ui-kit smoke tests", () => {
       expect(
         container.querySelectorAll('[aria-label^="Pane2 構造仮説 "]'),
       ).toHaveLength(3);
+      expect(
+        container.querySelector(
+          '[aria-label="起票・共有 → 推進責任者決定 に断絶がある"]',
+        ),
+      ).not.toBeNull();
       expect(
         loadCaseStorage(seed).pane2_step1.hypotheses[0].structural_hypothesis,
       ).toBe("会議の決裁者が曖昧");

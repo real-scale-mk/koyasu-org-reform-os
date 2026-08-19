@@ -167,6 +167,73 @@ export const pane2Step1Schema = z.object({
 
 export type Pane2Step1 = z.infer<typeof pane2Step1Schema>;
 
+export const RESPONSIBILITY_CHAIN_STEPS = [
+  { id: "1", label: "問題発見" },
+  { id: "2", label: "起票・共有" },
+  { id: "3", label: "推進責任者決定" },
+  { id: "4", label: "実務担当決定" },
+  { id: "5", label: "支援・意思決定" },
+  { id: "6", label: "対策実行" },
+  { id: "7", label: "完了確認" },
+  { id: "8", label: "効果確認・再発防止" },
+] as const;
+
+export const RESPONSIBILITY_CHAIN_TRANSITIONS = [
+  "1-2",
+  "2-3",
+  "3-4",
+  "4-5",
+  "5-6",
+  "6-7",
+  "7-8",
+] as const;
+
+export type ResponsibilityChainTransitionId =
+  (typeof RESPONSIBILITY_CHAIN_TRANSITIONS)[number];
+
+/** 断絶の参考例（固定回答ではない） */
+export const RESPONSIBILITY_CHAIN_BREAK_EXAMPLES: Record<
+  ResponsibilityChainTransitionId,
+  string
+> = {
+  "1-2": "問題は見えているが、起票・共有に乗らない",
+  "2-3": "共有したが推進責任者が決まらない",
+  "3-4": "推進責任者はいるが、担当・範囲・期限が曖昧",
+  "4-5": "現場支援・意思決定・障壁除去が不足",
+  "5-6": "意思決定が遅れ、実行が止まる",
+  "6-7": "実行はあるが完了基準の確認がない",
+  "7-8": "効果確認・再発防止の追跡がない",
+};
+
+export const pane2ChainBreakSchema = z.object({
+  transition_id: z.enum(RESPONSIBILITY_CHAIN_TRANSITIONS),
+  memo: z.string().default(""),
+});
+
+export type Pane2ChainBreak = z.infer<typeof pane2ChainBreakSchema>;
+
+export const DEFAULT_PANE2_STEP2 = {
+  breaks: [] as Pane2ChainBreak[],
+};
+
+export const pane2Step2Schema = z.object({
+  breaks: z
+    .array(pane2ChainBreakSchema)
+    .default([])
+    .transform((items) => {
+      const byTransition = new Map<ResponsibilityChainTransitionId, Pane2ChainBreak>();
+      for (const item of items) {
+        const parsed = pane2ChainBreakSchema.parse(item);
+        byTransition.set(parsed.transition_id, parsed);
+      }
+      return RESPONSIBILITY_CHAIN_TRANSITIONS.filter((id) =>
+        byTransition.has(id),
+      ).map((id) => byTransition.get(id)!);
+    }),
+});
+
+export type Pane2Step2 = z.infer<typeof pane2Step2Schema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
@@ -176,14 +243,19 @@ export const caseStorageSchema = z.object({
   pane2_step1: pane2Step1Schema.default({
     hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
   }),
+  pane2_step2: pane2Step2Schema.default(DEFAULT_PANE2_STEP2),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
 
 /** Workspace 等、pane1/pane2 の省略書き込み時も storage 側で保持/default する */
-export type CaseStorageWrite = Omit<CaseStorage, "pane1_intake" | "pane2_step1"> & {
+export type CaseStorageWrite = Omit<
+  CaseStorage,
+  "pane1_intake" | "pane2_step1" | "pane2_step2"
+> & {
   pane1_intake?: Pane1Intake;
   pane2_step1?: Pane2Step1;
+  pane2_step2?: Pane2Step2;
 };
 
 export const learningStorageSchema = z.object({

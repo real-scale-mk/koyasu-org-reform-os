@@ -14,12 +14,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DEFAULT_PANE1_INTAKE,
   DEFAULT_PANE2_STEP1_HYPOTHESES,
+  DEFAULT_PANE2_STEP2,
   DEFAULT_PHENOMENON_ID,
   type KoyasuCaseSeed,
   type Pane1Intake,
   type Pane2Hypothesis,
   type Pane2Step1,
+  type Pane2Step2,
   type Phenomenon,
+  type ResponsibilityChainTransitionId,
 } from "@/lib/koyasu/schema";
 import { getPrimaryInterventionStructureForPhenomenon } from "@/lib/koyasu/phenomenon-diagnostics";
 import { getReformStrategyDesign } from "@/lib/koyasu/reform-strategies";
@@ -61,6 +64,7 @@ export function Workspace({ seed }: WorkspaceProps) {
   const [pane2Step1, setPane2Step1] = useState<Pane2Step1>({
     hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
   });
+  const [pane2Step2, setPane2Step2] = useState<Pane2Step2>(DEFAULT_PANE2_STEP2);
   // Inline* は defaultValue のため、復元後に key を更新してリマウントする
   const [intakeFormKey, setIntakeFormKey] = useState(0);
   const [pane2FormKey, setPane2FormKey] = useState(0);
@@ -76,6 +80,7 @@ export function Workspace({ seed }: WorkspaceProps) {
       setPhenomena(stored.phenomena);
       setPane1Intake(stored.pane1_intake);
       setPane2Step1(stored.pane2_step1);
+      setPane2Step2(stored.pane2_step2);
       setIntakeFormKey((key) => key + 1);
       setPane2FormKey((key) => key + 1);
       setCasePersistReady(true);
@@ -97,9 +102,10 @@ export function Workspace({ seed }: WorkspaceProps) {
         phenomena,
         pane1_intake: pane1Intake,
         pane2_step1: pane2Step1,
+        pane2_step2: pane2Step2,
       });
     },
-    [caseA00, selectedPhenomenonId, phenomena, pane1Intake, pane2Step1, casePersistReady],
+    [caseA00, selectedPhenomenonId, phenomena, pane1Intake, pane2Step1, pane2Step2, casePersistReady],
   );
 
   const selectedPhenomenon = useMemo(
@@ -165,6 +171,38 @@ export function Workspace({ seed }: WorkspaceProps) {
       setPane2Step1((prev) => ({
         hypotheses: prev.hypotheses.map((hypothesis, currentIndex) =>
           currentIndex === index ? { ...hypothesis, ...patch } : hypothesis,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const togglePane2ChainBreak = useCallback(
+    (transitionId: ResponsibilityChainTransitionId) => {
+      setPane2Step2((prev) => {
+        const existing = prev.breaks.find(
+          (item) => item.transition_id === transitionId,
+        );
+        if (existing) {
+          return {
+            breaks: prev.breaks.filter(
+              (item) => item.transition_id !== transitionId,
+            ),
+          };
+        }
+        return {
+          breaks: [...prev.breaks, { transition_id: transitionId, memo: "" }],
+        };
+      });
+    },
+    [],
+  );
+
+  const updatePane2ChainBreakMemo = useCallback(
+    (transitionId: ResponsibilityChainTransitionId, memo: string) => {
+      setPane2Step2((prev) => ({
+        breaks: prev.breaks.map((item) =>
+          item.transition_id === transitionId ? { ...item, memo } : item,
         ),
       }));
     },
@@ -237,12 +275,15 @@ export function Workspace({ seed }: WorkspaceProps) {
             selectedPhenomenon={selectedPhenomenon}
             pane1Intake={pane1Intake}
             pane2Step1={pane2Step1}
+            pane2Step2={pane2Step2}
             pane2FormKey={pane2FormKey}
             primaryIntervention={primaryIntervention}
             perspectives={seed.perspectives}
             perspectiveDetails={seed.perspectiveDetails}
             relevanceMap={relevanceMap}
             onUpdatePane2Hypothesis={updatePane2Hypothesis}
+            onTogglePane2ChainBreak={togglePane2ChainBreak}
+            onUpdatePane2ChainBreakMemo={updatePane2ChainBreakMemo}
           />
           <ReformStrategyDesignPane
             selectedPhenomenon={selectedPhenomenon}
