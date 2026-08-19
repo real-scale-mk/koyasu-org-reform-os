@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   caseStorageSchema,
   DEFAULT_PANE1_INTAKE,
+  DEFAULT_PANE2_STEP1_HYPOTHESES,
+  type KoyasuCaseSeed,
 } from "@/lib/koyasu/schema";
+import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
 
 const legacyCaseV1 = {
   case_a00: "自律的に改善が回り、技術と人が継承される製造現場",
@@ -20,8 +23,21 @@ const legacyCaseV1 = {
   ],
 };
 
-describe("caseStorageSchema pane1_intake 後方互換", () => {
-  it("旧 koyasu:case:v1（pane1_intake なし）でも safeParse 成功する", () => {
+const seed: KoyasuCaseSeed = {
+  toolName: "小安式 組織改革OS",
+  caseName: "テスト案件",
+  case_a00: "seed A00",
+  selected_phenomenon_id: "young-turnover",
+  phenomena: legacyCaseV1.phenomena,
+  perspectives: [],
+  perspectiveDetails: {},
+  relevanceByPhenomenonId: {},
+  leverageByPhenomenonId: {},
+  outcomesByPhenomenonId: {},
+};
+
+describe("caseStorageSchema pane1/pane2 後方互換", () => {
+  it("旧 koyasu:case:v1（pane1_intake / pane2_step1 なし）でも safeParse 成功する", () => {
     const result = caseStorageSchema.safeParse(legacyCaseV1);
     expect(result.success).toBe(true);
     if (!result.success) return;
@@ -32,6 +48,9 @@ describe("caseStorageSchema pane1_intake 後方互換", () => {
     );
     expect(result.data.phenomena).toEqual(legacyCaseV1.phenomena);
     expect(result.data.pane1_intake).toEqual(DEFAULT_PANE1_INTAKE);
+    expect(result.data.pane2_step1).toEqual({
+      hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+    });
   });
 
   it("部分的な pane1_intake は欠落フィールドを default で補完する", () => {
@@ -67,6 +86,48 @@ describe("caseStorageSchema pane1_intake 後方互換", () => {
     expect(result.data.pane1_intake.surface_phenomena).toEqual(["a", "b", "c"]);
   });
 
+  it("pane2_step1 は欠落フィールド補完と最大3件への正規化を行う", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane2_step1: {
+        hypotheses: [
+          {
+            structural_hypothesis: "仮説1",
+          },
+          {
+            evidence: "根拠2",
+          },
+          {
+            follow_up_question: "確認3",
+          },
+          {
+            structural_hypothesis: "切り捨て対象",
+          },
+        ],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+
+    expect(result.data.pane2_step1.hypotheses).toEqual([
+      {
+        structural_hypothesis: "仮説1",
+        evidence: "",
+        follow_up_question: "",
+      },
+      {
+        structural_hypothesis: "",
+        evidence: "根拠2",
+        follow_up_question: "",
+      },
+      {
+        structural_hypothesis: "",
+        evidence: "",
+        follow_up_question: "確認3",
+      },
+    ]);
+  });
+
   it("既存フィールドを required のまま維持する（欠落で失敗）", () => {
     expect(caseStorageSchema.safeParse({}).success).toBe(false);
     expect(
@@ -75,5 +136,44 @@ describe("caseStorageSchema pane1_intake 後方互換", () => {
         selected_phenomenon_id: "y",
       }).success,
     ).toBe(false);
+  });
+});
+
+describe("loadCaseStorage / saveCaseStorage pane2_step1", () => {
+  it("Pane2-Step1 を保存後に再読込しても pane1_intake を壊さず復元できる", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane1_intake: {
+        ...DEFAULT_PANE1_INTAKE,
+        core_phenomenon: "若手が育つ前に離職する",
+        gap: "育成導線はある前提なのに、現場で機能していない",
+      },
+      pane2_step1: {
+        hypotheses: [
+          {
+            structural_hypothesis: "意思決定が毎回持ち帰りになる",
+            evidence: "会議後に再調整が常態化",
+            follow_up_question: "誰が最終判断を持っているか",
+          },
+          ...DEFAULT_PANE2_STEP1_HYPOTHESES.slice(1),
+        ],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane1_intake.core_phenomenon).toBe("若手が育つ前に離職する");
+    expect(loaded.pane1_intake.gap).toBe(
+      "育成導線はある前提なのに、現場で機能していない",
+    );
+    expect(loaded.pane2_step1.hypotheses[0]).toEqual({
+      structural_hypothesis: "意思決定が毎回持ち帰りになる",
+      evidence: "会議後に再調整が常態化",
+      follow_up_question: "誰が最終判断を持っているか",
+    });
+    expect(loaded.pane2_step1.hypotheses).toHaveLength(3);
   });
 });

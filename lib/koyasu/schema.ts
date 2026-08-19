@@ -128,19 +128,62 @@ export const pane1IntakeSchema = z.object({
 
 export type Pane1Intake = z.infer<typeof pane1IntakeSchema>;
 
+export const DEFAULT_PANE2_STEP1_HYPOTHESES = [
+  {
+    structural_hypothesis: "",
+    evidence: "",
+    follow_up_question: "",
+  },
+  {
+    structural_hypothesis: "",
+    evidence: "",
+    follow_up_question: "",
+  },
+  {
+    structural_hypothesis: "",
+    evidence: "",
+    follow_up_question: "",
+  },
+] as const;
+
+export const pane2HypothesisSchema = z.object({
+  structural_hypothesis: z.string().default(""),
+  evidence: z.string().default(""),
+  follow_up_question: z.string().default(""),
+});
+
+export type Pane2Hypothesis = z.infer<typeof pane2HypothesisSchema>;
+
+export const pane2Step1Schema = z.object({
+  hypotheses: z
+    .array(pane2HypothesisSchema)
+    .default([...DEFAULT_PANE2_STEP1_HYPOTHESES])
+    .transform((items) =>
+      [...items, ...DEFAULT_PANE2_STEP1_HYPOTHESES]
+        .slice(0, 3)
+        .map((item) => pane2HypothesisSchema.parse(item)),
+    ),
+});
+
+export type Pane2Step1 = z.infer<typeof pane2Step1Schema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
   phenomena: z.array(phenomenonSchema),
   // 旧 koyasu:case:v1 に無い場合は default（全体の safeParse を落とさない）
   pane1_intake: pane1IntakeSchema.default(DEFAULT_PANE1_INTAKE),
+  pane2_step1: pane2Step1Schema.default({
+    hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+  }),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
 
-/** Workspace 等、pane1_intake 未送信の書き込み用（省略時は storage 側で保持/default） */
-export type CaseStorageWrite = Omit<CaseStorage, "pane1_intake"> & {
+/** Workspace 等、pane1/pane2 の省略書き込み時も storage 側で保持/default する */
+export type CaseStorageWrite = Omit<CaseStorage, "pane1_intake" | "pane2_step1"> & {
   pane1_intake?: Pane1Intake;
+  pane2_step1?: Pane2Step1;
 };
 
 export const learningStorageSchema = z.object({

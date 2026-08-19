@@ -4,6 +4,9 @@ import { type ReactNode, useMemo, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import {
+  type Pane1Intake,
+  type Pane2Hypothesis,
+  type Pane2Step1,
   type Perspective,
   type PerspectiveDetail,
   type Phenomenon,
@@ -20,7 +23,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { SectionLabel } from "@/components/primitives";
+import { InlineTextareaField, SectionLabel } from "@/components/primitives";
 import { LevelBadge } from "@/components/workspace/LevelBadge";
 import { MeetingStructureDiagram } from "@/components/workspace/MeetingStructureDiagram";
 import { type PrimaryInterventionContext } from "@/lib/koyasu/phenomenon-diagnostics";
@@ -33,10 +36,17 @@ import { ArrowDown } from "lucide-react";
 
 type StructureAnalysisPaneProps = {
   selectedPhenomenon: Phenomenon;
+  pane1Intake: Pane1Intake;
+  pane2Step1: Pane2Step1;
+  pane2FormKey: number;
   primaryIntervention: PrimaryInterventionContext;
   perspectives: Perspective[];
   perspectiveDetails: Record<string, PerspectiveDetail>;
   relevanceMap: Record<string, Relevance>;
+  onUpdatePane2Hypothesis: (
+    index: number,
+    patch: Partial<Pane2Hypothesis>,
+  ) => void;
 };
 
 function AnalysisSection({
@@ -76,10 +86,14 @@ function FlowStep({ label }: { label: string }) {
 
 export function StructureAnalysisPane({
   selectedPhenomenon,
+  pane1Intake,
+  pane2Step1,
+  pane2FormKey,
   primaryIntervention,
   perspectives,
   perspectiveDetails: _perspectiveDetails,
   relevanceMap,
+  onUpdatePane2Hypothesis,
 }: StructureAnalysisPaneProps) {
   const [mapOpenForElementId, setMapOpenForElementId] = useState<string | null>(
     null,
@@ -120,6 +134,63 @@ export function StructureAnalysisPane({
               Pane1 介入本丸構造 → ① 構造の説明 → ② 見抜く問い → ③
               形成要素 → ④ 構造マップ
             </p>
+
+            <AnalysisSection
+              title="Pane2 Step1 | Pane1からの受け渡し"
+              description="Pane1 で整理した現象と GAP を参照しながら、原因を決め打ちせずに構造仮説を立てます。"
+            >
+              <div className="flex flex-col gap-3">
+                <Card size="sm" className="border-primary/30 bg-primary/5">
+                  <CardContent className="flex flex-col gap-3 p-3">
+                    <div className="flex flex-col gap-1">
+                      <SectionLabel
+                        tone="conclusion"
+                        className="text-xs normal-case tracking-normal"
+                      >
+                        核となる現象
+                      </SectionLabel>
+                      <p className="text-sm leading-relaxed text-foreground">
+                        {pane1Intake.core_phenomenon || "Pane1でまだ未記入です"}
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <SectionLabel
+                        tone="conclusion"
+                        className="text-xs normal-case tracking-normal"
+                      >
+                        GAP
+                      </SectionLabel>
+                      <p className="text-sm leading-relaxed text-foreground">
+                        {pane1Intake.gap || "Pane1でまだ未記入です"}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-primary/30 bg-card">
+                  <CardContent className="flex flex-col gap-2 p-3">
+                    <p className="text-base font-semibold leading-snug text-conclusion">
+                      なぜ、このGAPが繰り返し生まれるのか？
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      ここでは「誰が悪いか」を急いで決めず、人・制度・関係性の
+                      構造から仮説を置き、あとで検証する前提で整理します。
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <div className="flex flex-col gap-3">
+                  {pane2Step1.hypotheses.map((hypothesis, index) => (
+                    <StructuralHypothesisCard
+                      key={`pane2-hypothesis-${index}-${pane2FormKey}`}
+                      index={index}
+                      hypothesis={hypothesis}
+                      onUpdate={onUpdatePane2Hypothesis}
+                    />
+                  ))}
+                </div>
+              </div>
+            </AnalysisSection>
 
             <Card className="border-primary/30 bg-primary/5">
               <CardHeader className="flex flex-col gap-1 p-3 pb-2">
@@ -232,6 +303,87 @@ export function StructureAnalysisPane({
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+function StructuralHypothesisCard({
+  index,
+  hypothesis,
+  onUpdate,
+}: {
+  index: number;
+  hypothesis: Pane2Hypothesis;
+  onUpdate: (index: number, patch: Partial<Pane2Hypothesis>) => void;
+}) {
+  return (
+    <Card size="sm">
+      <CardHeader className="flex flex-col gap-1 p-3 pb-2">
+        <CardTitle className="text-sm text-conclusion">
+          仮説 {index + 1}
+        </CardTitle>
+        <p className="text-[11px] text-muted-foreground">
+          必要なら空欄のままでも構いません。最大3つまで整理できます。
+        </p>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3 p-3 pt-0">
+        <div className="flex flex-col gap-1">
+          <SectionLabel
+            tone="conclusion"
+            className="text-xs normal-case tracking-normal"
+          >
+            構造仮説
+          </SectionLabel>
+          <InlineTextareaField
+            value={hypothesis.structural_hypothesis}
+            onSave={(value) =>
+              onUpdate(index, {
+                structural_hypothesis: value,
+              })
+            }
+            ariaLabel={`Pane2 構造仮説 ${index + 1}`}
+            placeholder="例: 会議で意思決定が閉じず、現場のやり直しが恒常化している"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <SectionLabel
+            tone="conclusion"
+            className="text-xs normal-case tracking-normal"
+          >
+            そう考える根拠
+          </SectionLabel>
+          <InlineTextareaField
+            value={hypothesis.evidence}
+            onSave={(value) =>
+              onUpdate(index, {
+                evidence: value,
+              })
+            }
+            ariaLabel={`Pane2 根拠 ${index + 1}`}
+            placeholder="Pane1 の事実、現場で見た繰り返し、関係者の発言など"
+          />
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <SectionLabel
+            tone="conclusion"
+            className="text-xs normal-case tracking-normal"
+          >
+            まだ確認したいこと
+          </SectionLabel>
+          <InlineTextareaField
+            value={hypothesis.follow_up_question}
+            onSave={(value) =>
+              onUpdate(index, {
+                follow_up_question: value,
+              })
+            }
+            ariaLabel={`Pane2 確認したいこと ${index + 1}`}
+            placeholder="次に誰へ何を確認すると、この仮説の精度が上がるか"
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

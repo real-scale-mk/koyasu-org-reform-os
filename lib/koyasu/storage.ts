@@ -1,6 +1,7 @@
 import {
   caseStorageSchema,
   DEFAULT_PANE1_INTAKE,
+  DEFAULT_PANE2_STEP1_HYPOTHESES,
   learningStorageSchema,
   type CaseStorage,
   type CaseStorageWrite,
@@ -44,6 +45,9 @@ export function loadCaseStorage(seed: KoyasuCaseSeed): CaseStorage {
       selected_phenomenon_id: seed.selected_phenomenon_id,
       phenomena: seed.phenomena,
       pane1_intake: DEFAULT_PANE1_INTAKE,
+      pane2_step1: {
+        hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+      },
     };
   }
 
@@ -62,6 +66,7 @@ export function loadCaseStorage(seed: KoyasuCaseSeed): CaseStorage {
     selected_phenomenon_id: stored.selected_phenomenon_id,
     phenomena: mergedPhenomena,
     pane1_intake: stored.pane1_intake,
+    pane2_step1: stored.pane2_step1,
   };
 }
 
@@ -91,7 +96,7 @@ export function loadLearningStorage(seed: KoyasuCaseSeed): LearningStorage {
 
 /**
  * pane1_intake 省略時は既存 localStorage の値を維持し、無ければ default。
- * Workspace が従来どおり3フィールドだけ渡しても、将来の intake を消さない。
+ * pane2_step1 も同様に維持し、既存ワークスペース保存との後方互換を保つ。
  */
 export function saveCaseStorage(data: CaseStorageWrite): void {
   if (typeof window === "undefined") return;
@@ -99,12 +104,18 @@ export function saveCaseStorage(data: CaseStorageWrite): void {
   const existing = readStoredCase();
   const pane1_intake: Pane1Intake =
     data.pane1_intake ?? existing?.pane1_intake ?? DEFAULT_PANE1_INTAKE;
+  const pane2_step1 =
+    data.pane2_step1 ??
+    existing?.pane2_step1 ?? {
+      hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+    };
 
   const next: CaseStorage = {
     case_a00: data.case_a00,
     selected_phenomenon_id: data.selected_phenomenon_id,
     phenomena: data.phenomena,
     pane1_intake,
+    pane2_step1,
   };
 
   window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify(next));

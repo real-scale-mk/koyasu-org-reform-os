@@ -9,13 +9,16 @@
  * Pane4: SKILL資産化
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import {
   DEFAULT_PANE1_INTAKE,
+  DEFAULT_PANE2_STEP1_HYPOTHESES,
   DEFAULT_PHENOMENON_ID,
   type KoyasuCaseSeed,
   type Pane1Intake,
+  type Pane2Hypothesis,
+  type Pane2Step1,
   type Phenomenon,
 } from "@/lib/koyasu/schema";
 import { getPrimaryInterventionStructureForPhenomenon } from "@/lib/koyasu/phenomenon-diagnostics";
@@ -55,15 +58,16 @@ export function Workspace({ seed }: WorkspaceProps) {
   const [phenomena, setPhenomena] = useState<Phenomenon[]>(seed.phenomena);
   const [pane1Intake, setPane1Intake] =
     useState<Pane1Intake>(DEFAULT_PANE1_INTAKE);
+  const [pane2Step1, setPane2Step1] = useState<Pane2Step1>({
+    hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+  });
   // Inline* は defaultValue のため、復元後に key を更新してリマウントする
   const [intakeFormKey, setIntakeFormKey] = useState(0);
+  const [pane2FormKey, setPane2FormKey] = useState(0);
   const [pane4Open, setPane4Open] = useState(true);
-
-  // 復元完了まで true にしない（seed での保存データ上書きを防ぐ）
-  const casePersistReady = useRef(false);
+  const [casePersistReady, setCasePersistReady] = useState(false);
 
   useEffect(() => {
-    casePersistReady.current = false;
     const stored = loadCaseStorage(seed);
     // mount 後コールバックで反映（初回レンダーは seed のまま hydration を一致させる）
     const id = window.setTimeout(() => {
@@ -71,18 +75,20 @@ export function Workspace({ seed }: WorkspaceProps) {
       setSelectedPhenomenonId(stored.selected_phenomenon_id);
       setPhenomena(stored.phenomena);
       setPane1Intake(stored.pane1_intake);
+      setPane2Step1(stored.pane2_step1);
       setIntakeFormKey((key) => key + 1);
-      casePersistReady.current = true;
+      setPane2FormKey((key) => key + 1);
+      setCasePersistReady(true);
     }, 0);
     return () => {
       window.clearTimeout(id);
-      casePersistReady.current = false;
+      setCasePersistReady(false);
     };
   }, [seed]);
 
   useDebouncedEffect(
     () => {
-      if (!casePersistReady.current) {
+      if (!casePersistReady) {
         return;
       }
       saveCaseStorage({
@@ -90,9 +96,10 @@ export function Workspace({ seed }: WorkspaceProps) {
         selected_phenomenon_id: selectedPhenomenonId,
         phenomena,
         pane1_intake: pane1Intake,
+        pane2_step1: pane2Step1,
       });
     },
-    [caseA00, selectedPhenomenonId, phenomena, pane1Intake],
+    [caseA00, selectedPhenomenonId, phenomena, pane1Intake, pane2Step1, casePersistReady],
   );
 
   const selectedPhenomenon = useMemo(
@@ -152,6 +159,17 @@ export function Workspace({ seed }: WorkspaceProps) {
   const updatePane1Intake = useCallback((patch: Partial<Pane1Intake>) => {
     setPane1Intake((prev) => ({ ...prev, ...patch }));
   }, []);
+
+  const updatePane2Hypothesis = useCallback(
+    (index: number, patch: Partial<Pane2Hypothesis>) => {
+      setPane2Step1((prev) => ({
+        hypotheses: prev.hypotheses.map((hypothesis, currentIndex) =>
+          currentIndex === index ? { ...hypothesis, ...patch } : hypothesis,
+        ),
+      }));
+    },
+    [],
+  );
 
   const updatePhenomenon = useCallback(
     (
@@ -217,10 +235,14 @@ export function Workspace({ seed }: WorkspaceProps) {
         <div className="flex min-h-0 flex-1">
           <StructureAnalysisPane
             selectedPhenomenon={selectedPhenomenon}
+            pane1Intake={pane1Intake}
+            pane2Step1={pane2Step1}
+            pane2FormKey={pane2FormKey}
             primaryIntervention={primaryIntervention}
             perspectives={seed.perspectives}
             perspectiveDetails={seed.perspectiveDetails}
             relevanceMap={relevanceMap}
+            onUpdatePane2Hypothesis={updatePane2Hypothesis}
           />
           <ReformStrategyDesignPane
             selectedPhenomenon={selectedPhenomenon}
