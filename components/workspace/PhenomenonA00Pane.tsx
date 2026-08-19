@@ -11,6 +11,7 @@ import {
   InlineFieldRow,
   InlineSelectField,
   InlineTextareaField,
+  InlineTextField,
   SectionLabel,
 } from "@/components/primitives";
 import { Button } from "@/components/ui/button";
@@ -31,12 +32,13 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { AddItemDialog } from "@/components/workspace/AddItemDialog";
 import { LevelBadge } from "@/components/workspace/LevelBadge";
 import { Pane1Toggle } from "@/components/workspace/Pane1Toggle";
 import { PhenomenonDiagnosticSections } from "@/components/workspace/PhenomenonDiagnosticSections";
-import { ChevronDown, Plus } from "lucide-react";
+import { ArrowRight, ChevronDown, Plus } from "lucide-react";
 import { useMemo, useState, type ReactNode } from "react";
 import {
   sortPhenomenaForDisplay,
@@ -62,6 +64,25 @@ const AI_PROBE_MORE = [
 ] as const;
 
 const SURFACE_SLOT_COUNT = 3;
+const SUMMARY_PREVIEW_MAX = 72;
+
+function previewText(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "（未入力）";
+  if (trimmed.length <= SUMMARY_PREVIEW_MAX) return trimmed;
+  return `${trimmed.slice(0, SUMMARY_PREVIEW_MAX)}…`;
+}
+
+function SummaryItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[10px] font-medium text-muted-foreground">{label}</p>
+      <p className="text-xs leading-relaxed text-sidebar-foreground">
+        {previewText(value)}
+      </p>
+    </div>
+  );
+}
 
 type PhenomenonA00PaneProps = {
   toolName: string;
@@ -156,6 +177,7 @@ export function PhenomenonA00Pane({
   onUpdatePhenomenon,
   onAddPhenomenon,
 }: PhenomenonA00PaneProps) {
+  const { setOpen: setSidebarOpen } = useSidebar();
   const [addOpen, setAddOpen] = useState(false);
   const [legacyOpen, setLegacyOpen] = useState(false);
   const [aiMoreOpen, setAiMoreOpen] = useState(false);
@@ -449,6 +471,151 @@ export function PhenomenonA00Pane({
                   </InlineFieldRow>
                 </div>
               </IntakeStep>
+
+              <IntakeStep
+                step={6}
+                title="今回扱う案件とスコープ"
+                description="ここまで整理した現象とGAPを、一つの案件として切り出します。"
+              >
+                <div className="flex flex-col gap-3">
+                  <InlineFieldRow label="案件名">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        現象とGAPを、今回扱う一つの案件として表します。
+                      </p>
+                      <InlineTextField
+                        key={`case-name-${intakeFormKey}`}
+                        value={pane1Intake.case_name}
+                        onSave={(value) =>
+                          onUpdatePane1Intake({ case_name: value })
+                        }
+                        ariaLabel="案件名"
+                        placeholder="例：製品不具合対応における他人事化と責任連鎖の分断"
+                      />
+                    </div>
+                  </InlineFieldRow>
+
+                  <InlineFieldRow label="対象組織">
+                    <InlineTextField
+                      key={`target-org-${intakeFormKey}`}
+                      value={pane1Intake.target_org}
+                      onSave={(value) =>
+                        onUpdatePane1Intake({ target_org: value })
+                      }
+                      ariaLabel="対象組織"
+                      placeholder="例：約1,000名規模の製造事業部"
+                    />
+                  </InlineFieldRow>
+
+                  <InlineFieldRow label="対象部門・場面">
+                    <InlineTextField
+                      key={`target-context-${intakeFormKey}`}
+                      value={pane1Intake.target_context}
+                      onSave={(value) =>
+                        onUpdatePane1Intake({ target_context: value })
+                      }
+                      ariaLabel="対象部門・場面"
+                      placeholder="例：設計・製造・品質管理／不具合発生から対策完了まで"
+                    />
+                  </InlineFieldRow>
+
+                  <InlineFieldRow label="主な関係者">
+                    <InlineTextField
+                      key={`stakeholders-${intakeFormKey}`}
+                      value={pane1Intake.stakeholders}
+                      onSave={(value) =>
+                        onUpdatePane1Intake({ stakeholders: value })
+                      }
+                      ariaLabel="主な関係者"
+                      placeholder="例：推進責任者、設計・製造・品質、管理職、外注先"
+                    />
+                  </InlineFieldRow>
+
+                  <InlineFieldRow label="今回扱う範囲">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        今回の改革で、どこまでを正面から扱うかを明確にします。
+                      </p>
+                      <InlineTextareaField
+                        key={`scope-in-${intakeFormKey}`}
+                        value={pane1Intake.scope_in}
+                        onSave={(value) =>
+                          onUpdatePane1Intake({ scope_in: value })
+                        }
+                        ariaLabel="今回扱う範囲"
+                        placeholder="例：不具合発見から責任者決定・実行・完了確認までの責任連鎖"
+                      />
+                    </div>
+                  </InlineFieldRow>
+
+                  <InlineFieldRow label="今回扱わない範囲">
+                    <div className="flex flex-col gap-1">
+                      <p className="text-[11px] text-muted-foreground">
+                        重要でも今回は直接扱わない境界（MVPの絞り込み）。
+                      </p>
+                      <InlineTextareaField
+                        key={`scope-out-${intakeFormKey}`}
+                        value={pane1Intake.scope_out}
+                        onSave={(value) =>
+                          onUpdatePane1Intake({ scope_out: value })
+                        }
+                        ariaLabel="今回扱わない範囲"
+                        placeholder="例：人事制度全体、若手離職全体、評価制度の全面改定"
+                      />
+                    </div>
+                  </InlineFieldRow>
+                </div>
+              </IntakeStep>
+
+              <Card size="sm" className="rounded-lg">
+                <CardHeader className="flex flex-col gap-1 p-3 pb-0">
+                  <CardTitle className="text-sm font-semibold">
+                    Pane1で整理したこと
+                  </CardTitle>
+                  <p className="text-[10px] text-muted-foreground">
+                    中心現象と GAP までの要点確認（詳細は上の各ステップ）
+                  </p>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2.5 p-3">
+                  <SummaryItem
+                    label="中心現象"
+                    value={pane1Intake.core_phenomenon}
+                  />
+                  <SummaryItem label="AS IS" value={pane1Intake.as_is} />
+                  <SummaryItem label="TO BE" value={pane1Intake.to_be} />
+                  <SummaryItem label="GAP" value={pane1Intake.gap} />
+                </CardContent>
+              </Card>
+
+              <Card size="sm" className="rounded-lg border-primary/30">
+                <CardContent className="flex flex-col gap-3 p-3">
+                  <div className="flex flex-col gap-1">
+                    <SectionLabel
+                      tone="sidebar"
+                      className="normal-case tracking-normal"
+                    >
+                      なぜ、このGAPが繰り返し生まれるのか？
+                    </SectionLabel>
+                    <p className="text-[11px] leading-relaxed text-muted-foreground">
+                      ここからは原因を決めつけず、GAPを生み続ける背景構造について仮説を立てます。
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setSidebarOpen(false)}
+                  >
+                    Pane2 構造分析へ
+                    <ArrowRight />
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground">
+                    Pane1を畳み、右側の「構造分析」に集中できます（⌘B
+                    でも切替可）。Pane2の中身は既存のままです。
+                  </p>
+                </CardContent>
+              </Card>
             </SidebarGroupContent>
           </SidebarGroup>
 
