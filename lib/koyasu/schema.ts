@@ -234,6 +234,72 @@ export const pane2Step2Schema = z.object({
 
 export type Pane2Step2 = z.infer<typeof pane2Step2Schema>;
 
+/** Pane2-Step3: 説明力 / 介入可能性（未選択は空文字） */
+export const PANE2_RATING_VALUES = ["高", "中", "低"] as const;
+export type Pane2Rating = (typeof PANE2_RATING_VALUES)[number];
+export type Pane2RatingOrEmpty = Pane2Rating | "";
+
+export const pane2RatingSchema = z
+  .union([z.enum(PANE2_RATING_VALUES), z.literal("")])
+  .default("");
+
+export const DEFAULT_PANE2_STEP3_EVALUATION = {
+  explanatory_power: "" as Pane2RatingOrEmpty,
+  intervene_ability: "" as Pane2RatingOrEmpty,
+  priority_reason: "",
+};
+
+export const DEFAULT_PANE2_STEP3_EVALUATIONS = [
+  { ...DEFAULT_PANE2_STEP3_EVALUATION },
+  { ...DEFAULT_PANE2_STEP3_EVALUATION },
+  { ...DEFAULT_PANE2_STEP3_EVALUATION },
+] as const;
+
+export const pane2Step3EvaluationSchema = z.object({
+  explanatory_power: pane2RatingSchema,
+  intervene_ability: pane2RatingSchema,
+  priority_reason: z.string().default(""),
+});
+
+export type Pane2Step3Evaluation = z.infer<typeof pane2Step3EvaluationSchema>;
+
+export const DEFAULT_PANE2_STEP3 = {
+  evaluations: [
+    { ...DEFAULT_PANE2_STEP3_EVALUATION },
+    { ...DEFAULT_PANE2_STEP3_EVALUATION },
+    { ...DEFAULT_PANE2_STEP3_EVALUATION },
+  ],
+  selected_for_pane3: [] as number[],
+};
+
+export const pane2Step3Schema = z.object({
+  evaluations: z
+    .array(pane2Step3EvaluationSchema)
+    .default([...DEFAULT_PANE2_STEP3_EVALUATIONS])
+    .transform((items) =>
+      [...items, ...DEFAULT_PANE2_STEP3_EVALUATIONS]
+        .slice(0, 3)
+        .map((item) => pane2Step3EvaluationSchema.parse(item)),
+    ),
+  // 仮説 index 0..2。最大2件・重複除去（順序は入力順を維持）
+  selected_for_pane3: z
+    .array(z.number().int())
+    .default([])
+    .transform((items) => {
+      const seen = new Set<number>();
+      const next: number[] = [];
+      for (const item of items) {
+        if (item < 0 || item > 2 || seen.has(item)) continue;
+        seen.add(item);
+        next.push(item);
+        if (next.length >= 2) break;
+      }
+      return next;
+    }),
+});
+
+export type Pane2Step3 = z.infer<typeof pane2Step3Schema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
@@ -244,6 +310,7 @@ export const caseStorageSchema = z.object({
     hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
   }),
   pane2_step2: pane2Step2Schema.default(DEFAULT_PANE2_STEP2),
+  pane2_step3: pane2Step3Schema.default(DEFAULT_PANE2_STEP3),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
@@ -251,11 +318,12 @@ export type CaseStorage = z.infer<typeof caseStorageSchema>;
 /** Workspace 等、pane1/pane2 の省略書き込み時も storage 側で保持/default する */
 export type CaseStorageWrite = Omit<
   CaseStorage,
-  "pane1_intake" | "pane2_step1" | "pane2_step2"
+  "pane1_intake" | "pane2_step1" | "pane2_step2" | "pane2_step3"
 > & {
   pane1_intake?: Pane1Intake;
   pane2_step1?: Pane2Step1;
   pane2_step2?: Pane2Step2;
+  pane2_step3?: Pane2Step3;
 };
 
 export const learningStorageSchema = z.object({

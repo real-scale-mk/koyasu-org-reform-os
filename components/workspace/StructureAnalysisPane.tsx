@@ -8,6 +8,8 @@ import {
   type Pane2Hypothesis,
   type Pane2Step1,
   type Pane2Step2,
+  type Pane2Step3,
+  type Pane2Step3Evaluation,
   type Perspective,
   type PerspectiveDetail,
   type Phenomenon,
@@ -26,6 +28,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { InlineTextareaField, SectionLabel } from "@/components/primitives";
+import { HypothesisPriorityStep } from "@/components/workspace/HypothesisPriorityStep";
 import { LevelBadge } from "@/components/workspace/LevelBadge";
 import { MeetingStructureDiagram } from "@/components/workspace/MeetingStructureDiagram";
 import { ResponsibilityChainBreaks } from "@/components/workspace/ResponsibilityChainBreaks";
@@ -42,6 +45,7 @@ type StructureAnalysisPaneProps = {
   pane1Intake: Pane1Intake;
   pane2Step1: Pane2Step1;
   pane2Step2: Pane2Step2;
+  pane2Step3: Pane2Step3;
   pane2FormKey: number;
   primaryIntervention: PrimaryInterventionContext;
   perspectives: Perspective[];
@@ -58,6 +62,11 @@ type StructureAnalysisPaneProps = {
     transitionId: ResponsibilityChainTransitionId,
     memo: string,
   ) => void;
+  onUpdatePane2Step3Evaluation: (
+    index: number,
+    patch: Partial<Pane2Step3Evaluation>,
+  ) => void;
+  onTogglePane2Step3Pane3Selection: (index: number) => void;
 };
 
 function AnalysisSection({
@@ -100,6 +109,7 @@ export function StructureAnalysisPane({
   pane1Intake,
   pane2Step1,
   pane2Step2,
+  pane2Step3,
   pane2FormKey,
   primaryIntervention,
   perspectives,
@@ -108,6 +118,8 @@ export function StructureAnalysisPane({
   onUpdatePane2Hypothesis,
   onTogglePane2ChainBreak,
   onUpdatePane2ChainBreakMemo,
+  onUpdatePane2Step3Evaluation,
+  onTogglePane2Step3Pane3Selection,
 }: StructureAnalysisPaneProps) {
   const [mapOpenForElementId, setMapOpenForElementId] = useState<string | null>(
     null,
@@ -215,6 +227,19 @@ export function StructureAnalysisPane({
                 pane2FormKey={pane2FormKey}
                 onToggleBreak={onTogglePane2ChainBreak}
                 onUpdateBreakMemo={onUpdatePane2ChainBreakMemo}
+              />
+            </AnalysisSection>
+
+            <AnalysisSection
+              title="Pane2 Step3 | 仮説の優先度を見立てる"
+              description="説明力と介入可能性で仮説を評価し、Pane3で介入を考える候補を最大2つまで選びます。"
+            >
+              <HypothesisPriorityStep
+                hypotheses={pane2Step1.hypotheses}
+                pane2Step3={pane2Step3}
+                pane2FormKey={pane2FormKey}
+                onUpdateEvaluation={onUpdatePane2Step3Evaluation}
+                onTogglePane3Selection={onTogglePane2Step3Pane3Selection}
               />
             </AnalysisSection>
 

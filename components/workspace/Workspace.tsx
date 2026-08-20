@@ -15,12 +15,15 @@ import {
   DEFAULT_PANE1_INTAKE,
   DEFAULT_PANE2_STEP1_HYPOTHESES,
   DEFAULT_PANE2_STEP2,
+  DEFAULT_PANE2_STEP3,
   DEFAULT_PHENOMENON_ID,
   type KoyasuCaseSeed,
   type Pane1Intake,
   type Pane2Hypothesis,
   type Pane2Step1,
   type Pane2Step2,
+  type Pane2Step3,
+  type Pane2Step3Evaluation,
   type Phenomenon,
   type ResponsibilityChainTransitionId,
 } from "@/lib/koyasu/schema";
@@ -65,6 +68,7 @@ export function Workspace({ seed }: WorkspaceProps) {
     hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
   });
   const [pane2Step2, setPane2Step2] = useState<Pane2Step2>(DEFAULT_PANE2_STEP2);
+  const [pane2Step3, setPane2Step3] = useState<Pane2Step3>(DEFAULT_PANE2_STEP3);
   // Inline* は defaultValue のため、復元後に key を更新してリマウントする
   const [intakeFormKey, setIntakeFormKey] = useState(0);
   const [pane2FormKey, setPane2FormKey] = useState(0);
@@ -81,6 +85,7 @@ export function Workspace({ seed }: WorkspaceProps) {
       setPane1Intake(stored.pane1_intake);
       setPane2Step1(stored.pane2_step1);
       setPane2Step2(stored.pane2_step2);
+      setPane2Step3(stored.pane2_step3);
       setIntakeFormKey((key) => key + 1);
       setPane2FormKey((key) => key + 1);
       setCasePersistReady(true);
@@ -103,9 +108,19 @@ export function Workspace({ seed }: WorkspaceProps) {
         pane1_intake: pane1Intake,
         pane2_step1: pane2Step1,
         pane2_step2: pane2Step2,
+        pane2_step3: pane2Step3,
       });
     },
-    [caseA00, selectedPhenomenonId, phenomena, pane1Intake, pane2Step1, pane2Step2, casePersistReady],
+    [
+      caseA00,
+      selectedPhenomenonId,
+      phenomena,
+      pane1Intake,
+      pane2Step1,
+      pane2Step2,
+      pane2Step3,
+      casePersistReady,
+    ],
   );
 
   const selectedPhenomenon = useMemo(
@@ -209,6 +224,39 @@ export function Workspace({ seed }: WorkspaceProps) {
     [],
   );
 
+  const updatePane2Step3Evaluation = useCallback(
+    (index: number, patch: Partial<Pane2Step3Evaluation>) => {
+      setPane2Step3((prev) => ({
+        ...prev,
+        evaluations: prev.evaluations.map((evaluation, currentIndex) =>
+          currentIndex === index ? { ...evaluation, ...patch } : evaluation,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const togglePane2Step3Pane3Selection = useCallback((index: number) => {
+    setPane2Step3((prev) => {
+      const alreadySelected = prev.selected_for_pane3.includes(index);
+      if (alreadySelected) {
+        return {
+          ...prev,
+          selected_for_pane3: prev.selected_for_pane3.filter(
+            (item) => item !== index,
+          ),
+        };
+      }
+      if (prev.selected_for_pane3.length >= 2) {
+        return prev;
+      }
+      return {
+        ...prev,
+        selected_for_pane3: [...prev.selected_for_pane3, index],
+      };
+    });
+  }, []);
+
   const updatePhenomenon = useCallback(
     (
       id: string,
@@ -276,6 +324,7 @@ export function Workspace({ seed }: WorkspaceProps) {
             pane1Intake={pane1Intake}
             pane2Step1={pane2Step1}
             pane2Step2={pane2Step2}
+            pane2Step3={pane2Step3}
             pane2FormKey={pane2FormKey}
             primaryIntervention={primaryIntervention}
             perspectives={seed.perspectives}
@@ -284,6 +333,8 @@ export function Workspace({ seed }: WorkspaceProps) {
             onUpdatePane2Hypothesis={updatePane2Hypothesis}
             onTogglePane2ChainBreak={togglePane2ChainBreak}
             onUpdatePane2ChainBreakMemo={updatePane2ChainBreakMemo}
+            onUpdatePane2Step3Evaluation={updatePane2Step3Evaluation}
+            onTogglePane2Step3Pane3Selection={togglePane2Step3Pane3Selection}
           />
           <ReformStrategyDesignPane
             selectedPhenomenon={selectedPhenomenon}

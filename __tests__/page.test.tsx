@@ -82,6 +82,8 @@ describe("workspace-ui-kit smoke tests", () => {
 
       expect(container.textContent).toContain("なぜ、このGAPが繰り返し生まれるのか？");
       expect(container.textContent).toContain("責任連鎖のどこで切れているか");
+      expect(container.textContent).toContain("仮説の優先度を見立てる");
+      expect(container.textContent).toContain("介入可能性");
       expect(container.textContent).toContain("若手が育つ前に離職してしまう");
       expect(container.textContent).toContain(
         "育成の意図はあるのに、現場で機能不全が繰り返される",
@@ -104,6 +106,18 @@ describe("workspace-ui-kit smoke tests", () => {
         container.querySelector(
           '[aria-label="起票・共有 → 推進責任者決定 に断絶がある"]',
         ),
+      ).not.toBeNull();
+      expect(
+        container.querySelector('[aria-label="仮説 1 をPane3候補にする"]'),
+      ).not.toBeNull();
+      expect(
+        container.querySelector('[aria-label="仮説 1 の説明力"]'),
+      ).not.toBeNull();
+      expect(
+        container.querySelector('[aria-label="仮説 1 の介入可能性"]'),
+      ).not.toBeNull();
+      expect(
+        container.querySelector('[aria-label="Pane2 優先理由 1"]'),
       ).not.toBeNull();
       expect(
         loadCaseStorage(seed).pane2_step1.hypotheses[0].structural_hypothesis,
@@ -136,5 +150,25 @@ describe("workspace-ui-kit smoke tests", () => {
     expect(loaded.pane2_step1.hypotheses).toEqual([
       ...DEFAULT_PANE2_STEP1_HYPOTHESES,
     ]);
+    expect(loaded.pane2_step3).toEqual({
+      evaluations: [
+        {
+          explanatory_power: "",
+          intervene_ability: "",
+          priority_reason: "",
+        },
+        {
+          explanatory_power: "",
+          intervene_ability: "",
+          priority_reason: "",
+        },
+        {
+          explanatory_power: "",
+          intervene_ability: "",
+          priority_reason: "",
+        },
+      ],
+      selected_for_pane3: [],
+    });
   });
 });

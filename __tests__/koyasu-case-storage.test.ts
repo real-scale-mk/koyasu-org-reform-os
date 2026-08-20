@@ -5,6 +5,7 @@ import {
   DEFAULT_PANE1_INTAKE,
   DEFAULT_PANE2_STEP1_HYPOTHESES,
   DEFAULT_PANE2_STEP2,
+  DEFAULT_PANE2_STEP3,
   type KoyasuCaseSeed,
 } from "@/lib/koyasu/schema";
 import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
@@ -53,6 +54,7 @@ describe("caseStorageSchema pane1/pane2 後方互換", () => {
       hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
     });
     expect(result.data.pane2_step2).toEqual(DEFAULT_PANE2_STEP2);
+    expect(result.data.pane2_step3).toEqual(DEFAULT_PANE2_STEP3);
   });
 
   it("部分的な pane1_intake は欠落フィールドを default で補完する", () => {
@@ -236,5 +238,107 @@ describe("loadCaseStorage / saveCaseStorage pane2_step1", () => {
     expect(loaded.pane2_step2.breaks).toEqual([
       { transition_id: "3-4", memo: "担当が曖昧" },
     ]);
+  });
+
+  it("Pane2-Step3 の評価と Pane3 候補を保存後に再読込しても他ペイロードを壊さない", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane1_intake: {
+        ...DEFAULT_PANE1_INTAKE,
+        gap: "責任連鎖が成立していない",
+      },
+      pane2_step1: {
+        hypotheses: [...DEFAULT_PANE2_STEP1_HYPOTHESES],
+      },
+      pane2_step2: {
+        breaks: [{ transition_id: "2-3", memo: "推進責任者不在" }],
+      },
+      pane2_step3: {
+        evaluations: [
+          {
+            explanatory_power: "高",
+            intervene_ability: "低",
+            priority_reason: "説明力は高いが権限構造で止められやすい",
+          },
+          {
+            explanatory_power: "中",
+            intervene_ability: "高",
+            priority_reason: "小さく試せる",
+          },
+          {
+            explanatory_power: "低",
+            intervene_ability: "中",
+            priority_reason: "",
+          },
+        ],
+        selected_for_pane3: [0, 1],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane1_intake.gap).toBe("責任連鎖が成立していない");
+    expect(loaded.pane2_step2.breaks).toEqual([
+      { transition_id: "2-3", memo: "推進責任者不在" },
+    ]);
+    expect(loaded.pane2_step3.evaluations[0]).toEqual({
+      explanatory_power: "高",
+      intervene_ability: "低",
+      priority_reason: "説明力は高いが権限構造で止められやすい",
+    });
+    expect(loaded.pane2_step3.selected_for_pane3).toEqual([0, 1]);
+  });
+
+  it("pane2_step3 省略保存時は既存 localStorage の値を維持する", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane2_step3: {
+        evaluations: [
+          {
+            explanatory_power: "高",
+            intervene_ability: "中",
+            priority_reason: "維持確認",
+          },
+          ...DEFAULT_PANE2_STEP3.evaluations.slice(1),
+        ],
+        selected_for_pane3: [0],
+      },
+    });
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane2_step2: {
+        breaks: [{ transition_id: "4-5", memo: "支援不足" }],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane2_step2.breaks).toEqual([
+      { transition_id: "4-5", memo: "支援不足" },
+    ]);
+    expect(loaded.pane2_step3.evaluations[0].priority_reason).toBe("維持確認");
+    expect(loaded.pane2_step3.selected_for_pane3).toEqual([0]);
+  });
+
+  it("pane2_step3 は selected_for_pane3 を最大2件に正規化する", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane2_step3: {
+        evaluations: DEFAULT_PANE2_STEP3.evaluations,
+        selected_for_pane3: [0, 1, 2, 1, -1, 9],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane2_step3.selected_for_pane3).toEqual([0, 1]);
   });
 });
