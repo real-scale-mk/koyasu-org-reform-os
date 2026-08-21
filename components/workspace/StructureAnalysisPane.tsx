@@ -32,6 +32,7 @@ import { HypothesisPriorityStep } from "@/components/workspace/HypothesisPriorit
 import { LevelBadge } from "@/components/workspace/LevelBadge";
 import { MeetingStructureDiagram } from "@/components/workspace/MeetingStructureDiagram";
 import { ResponsibilityChainBreaks } from "@/components/workspace/ResponsibilityChainBreaks";
+import { StructuralHypothesisMap } from "@/components/workspace/StructuralHypothesisMap";
 import { type PrimaryInterventionContext } from "@/lib/koyasu/phenomenon-diagnostics";
 import {
   getStructureFormingElements,
@@ -124,6 +125,7 @@ export function StructureAnalysisPane({
   const [mapOpenForElementId, setMapOpenForElementId] = useState<string | null>(
     null,
   );
+  const [hypothesisMapOpen, setHypothesisMapOpen] = useState(false);
 
   const structure = primaryIntervention.structure;
   const showStructureMap = hasStructureMapDiagram(structure.id);
@@ -243,6 +245,31 @@ export function StructureAnalysisPane({
               />
             </AnalysisSection>
 
+            <AnalysisSection
+              title="Pane2 Step4 | 構造仮説マップ"
+              description="GAPが構造として再生産される仮説の流れを可視化します（確定因果ではありません）。"
+            >
+              <Card size="sm" className="border-border bg-card">
+                <CardHeader className="flex flex-col gap-1 p-3 pb-2">
+                  <CardTitle className="text-sm text-conclusion">
+                    構造仮説マップ
+                  </CardTitle>
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    Step1〜3の仮説を、GAPが再生産される流れとして図解します。確定因果ではなく、対話で更新する仮説です。
+                  </p>
+                </CardHeader>
+                <CardContent className="flex flex-col gap-2 p-3 pt-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHypothesisMapOpen(true)}
+                  >
+                    構造図解を見る
+                  </Button>
+                </CardContent>
+              </Card>
+            </AnalysisSection>
+
             <Card className="border-primary/30 bg-primary/5">
               <CardHeader className="flex flex-col gap-1 p-3 pb-2">
                 <CardTitle className="text-sm text-conclusion">
@@ -350,6 +377,26 @@ export function StructureAnalysisPane({
                 </p>
               </>
             )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet
+        open={hypothesisMapOpen}
+        onOpenChange={setHypothesisMapOpen}
+      >
+        <SheetContent
+          side="right"
+          className="w-[95vw] overflow-y-auto data-[side=right]:w-[95vw] data-[side=right]:sm:max-w-none"
+        >
+          <SheetHeader>
+            <SheetTitle className="text-conclusion">構造仮説マップ</SheetTitle>
+            <SheetDescription>
+              GAPが構造として再生産される仮説の流れ（確定因果ではありません）
+            </SheetDescription>
+          </SheetHeader>
+          <div className="flex flex-col gap-3 px-4 pb-6">
+            <StructuralHypothesisMap />
           </div>
         </SheetContent>
       </Sheet>

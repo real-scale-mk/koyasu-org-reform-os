@@ -83,6 +83,35 @@ describe("workspace-ui-kit smoke tests", () => {
       expect(container.textContent).toContain("なぜ、このGAPが繰り返し生まれるのか？");
       expect(container.textContent).toContain("責任連鎖のどこで切れているか");
       expect(container.textContent).toContain("仮説の優先度を見立てる");
+      expect(container.textContent).toContain("構造仮説マップ");
+      expect(container.textContent).toContain("構造図解を見る");
+      expect(container.textContent).not.toContain(
+        "この構造を変えるなら、どこに最初の一手を入れるか？",
+      );
+
+      const openMapButton = Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("構造図解を見る"),
+      );
+      expect(openMapButton).toBeDefined();
+      await act(async () => {
+        openMapButton?.dispatchEvent(
+          new MouseEvent("click", { bubbles: true }),
+        );
+        await Promise.resolve();
+      });
+
+      expect(document.body.textContent).toContain("責任回避・他部門転嫁");
+      expect(document.body.textContent).toContain("再生産ハブ");
+      expect(document.body.textContent).toContain("この構造図の見るべき視点");
+      expect(document.body.textContent).toContain("背景にある深層条件");
+      expect(document.body.textContent).toContain("救済の副作用");
+      expect(document.body.textContent).toContain("負荷集中・疲弊");
+      expect(document.body.textContent).toContain(
+        "この構造を放置すると、問題の温存だけでなく、支える側の疲弊・離脱を招く",
+      );
+      expect(document.body.textContent).toContain(
+        "この構造を変えるなら、どこに最初の一手を入れるか？",
+      );
       expect(container.textContent).toContain("介入可能性");
       expect(container.textContent).toContain("若手が育つ前に離職してしまう");
       expect(container.textContent).toContain(
