@@ -6,6 +6,8 @@ import {
   DEFAULT_PANE2_STEP1_HYPOTHESES,
   DEFAULT_PANE2_STEP2,
   DEFAULT_PANE2_STEP3,
+  DEFAULT_PANE3_STEP1,
+  DEFAULT_PANE3_STEP1_ENTRY,
   type KoyasuCaseSeed,
 } from "@/lib/koyasu/schema";
 import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
@@ -55,6 +57,7 @@ describe("caseStorageSchema pane1/pane2 後方互換", () => {
     });
     expect(result.data.pane2_step2).toEqual(DEFAULT_PANE2_STEP2);
     expect(result.data.pane2_step3).toEqual(DEFAULT_PANE2_STEP3);
+    expect(result.data.pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
   });
 
   it("部分的な pane1_intake は欠落フィールドを default で補完する", () => {
@@ -340,5 +343,159 @@ describe("loadCaseStorage / saveCaseStorage pane2_step1", () => {
     expect(result.success).toBe(true);
     if (!result.success) return;
     expect(result.data.pane2_step3.selected_for_pane3).toEqual([0, 1]);
+  });
+});
+
+describe("loadCaseStorage / saveCaseStorage pane3_step1", () => {
+  it("Pane3-Step1 を保存後に再読込しても pane1/pane2 を壊さず復元できる", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane1_intake: {
+        ...DEFAULT_PANE1_INTAKE,
+        gap: "責任連鎖が成立していない",
+      },
+      pane2_step3: {
+        evaluations: DEFAULT_PANE2_STEP3.evaluations,
+        selected_for_pane3: [0, 1],
+      },
+      pane3_step1: {
+        entries: [
+          {
+            structural_core_candidate:
+              "決裁・期限・担当が会議で閉じない構造",
+            first_entry_candidate:
+              "会議の最後に決裁者・期限・担当を記録で閉じる",
+            why_start_here:
+              "上流が閉じないと下流のやり直しが再生産される",
+          },
+          {
+            structural_core_candidate: "共有後に推進責任者が決まらない断絶",
+            first_entry_candidate:
+              "起票後24時間以内に推進責任者を決めるルール",
+            why_start_here: "共有止まりを止める接続点だから",
+          },
+          { ...DEFAULT_PANE3_STEP1_ENTRY },
+        ],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane1_intake.gap).toBe("責任連鎖が成立していない");
+    expect(loaded.pane2_step3.selected_for_pane3).toEqual([0, 1]);
+    expect(loaded.pane3_step1.entries[0]).toEqual({
+      structural_core_candidate: "決裁・期限・担当が会議で閉じない構造",
+      first_entry_candidate:
+        "会議の最後に決裁者・期限・担当を記録で閉じる",
+      why_start_here: "上流が閉じないと下流のやり直しが再生産される",
+    });
+    expect(loaded.pane3_step1.entries[1].first_entry_candidate).toBe(
+      "起票後24時間以内に推進責任者を決めるルール",
+    );
+    expect(loaded.pane3_step1.entries).toHaveLength(3);
+  });
+
+  it("pane3_step1 省略保存時は既存 localStorage の値を維持する", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane3_step1: {
+        entries: [
+          {
+            structural_core_candidate: "維持される本丸",
+            first_entry_candidate: "維持される最初の一手",
+            why_start_here: "維持理由",
+          },
+          ...DEFAULT_PANE3_STEP1.entries.slice(1),
+        ],
+      },
+    });
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane2_step3: {
+        evaluations: DEFAULT_PANE2_STEP3.evaluations,
+        selected_for_pane3: [0],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane2_step3.selected_for_pane3).toEqual([0]);
+    expect(loaded.pane3_step1.entries[0]).toEqual({
+      structural_core_candidate: "維持される本丸",
+      first_entry_candidate: "維持される最初の一手",
+      why_start_here: "維持理由",
+    });
+  });
+
+  it("旧 koyasu:case:v1（pane3_step1 なし）でも default が補われる", () => {
+    const result = caseStorageSchema.safeParse(legacyCaseV1);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
+  });
+
+  it("旧 leverage_point / why は新フィールドへ移行する", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane3_step1: {
+        entries: [
+          {
+            leverage_point: "会議の最後に決裁者・期限・担当を記録で閉じる",
+            why: "上流が閉じないと下流のやり直しが再生産される",
+          },
+          { leverage_point: "起票後の推進責任者ルール", why: "" },
+          {},
+        ],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane3_step1.entries[0]).toEqual({
+      structural_core_candidate: "",
+      first_entry_candidate:
+        "会議の最後に決裁者・期限・担当を記録で閉じる",
+      why_start_here: "上流が閉じないと下流のやり直しが再生産される",
+    });
+    expect(result.data.pane3_step1.entries[1]).toEqual({
+      structural_core_candidate: "",
+      first_entry_candidate: "起票後の推進責任者ルール",
+      why_start_here: "",
+    });
+    expect(result.data.pane3_step1.entries[2]).toEqual(DEFAULT_PANE3_STEP1_ENTRY);
+  });
+
+  it("新フィールドがある場合は旧 leverage_point より優先する", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane3_step1: {
+        entries: [
+          {
+            structural_core_candidate: "本丸候補",
+            first_entry_candidate: "最初の一手",
+            why_start_here: "理由",
+            leverage_point: "旧レバレッジは無視",
+            why: "旧whyは無視",
+          },
+          {},
+          {},
+        ],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane3_step1.entries[0]).toEqual({
+      structural_core_candidate: "本丸候補",
+      first_entry_candidate: "最初の一手",
+      why_start_here: "理由",
+    });
   });
 });

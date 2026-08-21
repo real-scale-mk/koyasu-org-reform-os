@@ -16,6 +16,7 @@ import {
   DEFAULT_PANE2_STEP1_HYPOTHESES,
   DEFAULT_PANE2_STEP2,
   DEFAULT_PANE2_STEP3,
+  DEFAULT_PANE3_STEP1,
   DEFAULT_PHENOMENON_ID,
   type KoyasuCaseSeed,
   type Pane1Intake,
@@ -24,6 +25,8 @@ import {
   type Pane2Step2,
   type Pane2Step3,
   type Pane2Step3Evaluation,
+  type Pane3Step1,
+  type Pane3Step1Entry,
   type Phenomenon,
   type ResponsibilityChainTransitionId,
 } from "@/lib/koyasu/schema";
@@ -69,9 +72,11 @@ export function Workspace({ seed }: WorkspaceProps) {
   });
   const [pane2Step2, setPane2Step2] = useState<Pane2Step2>(DEFAULT_PANE2_STEP2);
   const [pane2Step3, setPane2Step3] = useState<Pane2Step3>(DEFAULT_PANE2_STEP3);
+  const [pane3Step1, setPane3Step1] = useState<Pane3Step1>(DEFAULT_PANE3_STEP1);
   // Inline* は defaultValue のため、復元後に key を更新してリマウントする
   const [intakeFormKey, setIntakeFormKey] = useState(0);
   const [pane2FormKey, setPane2FormKey] = useState(0);
+  const [pane3FormKey, setPane3FormKey] = useState(0);
   const [pane4Open, setPane4Open] = useState(true);
   const [casePersistReady, setCasePersistReady] = useState(false);
 
@@ -86,8 +91,10 @@ export function Workspace({ seed }: WorkspaceProps) {
       setPane2Step1(stored.pane2_step1);
       setPane2Step2(stored.pane2_step2);
       setPane2Step3(stored.pane2_step3);
+      setPane3Step1(stored.pane3_step1);
       setIntakeFormKey((key) => key + 1);
       setPane2FormKey((key) => key + 1);
+      setPane3FormKey((key) => key + 1);
       setCasePersistReady(true);
     }, 0);
     return () => {
@@ -109,6 +116,7 @@ export function Workspace({ seed }: WorkspaceProps) {
         pane2_step1: pane2Step1,
         pane2_step2: pane2Step2,
         pane2_step3: pane2Step3,
+        pane3_step1: pane3Step1,
       });
     },
     [
@@ -119,6 +127,7 @@ export function Workspace({ seed }: WorkspaceProps) {
       pane2Step1,
       pane2Step2,
       pane2Step3,
+      pane3Step1,
       casePersistReady,
     ],
   );
@@ -257,6 +266,17 @@ export function Workspace({ seed }: WorkspaceProps) {
     });
   }, []);
 
+  const updatePane3Step1Entry = useCallback(
+    (index: number, patch: Partial<Pane3Step1Entry>) => {
+      setPane3Step1((prev) => ({
+        entries: prev.entries.map((entry, currentIndex) =>
+          currentIndex === index ? { ...entry, ...patch } : entry,
+        ),
+      }));
+    },
+    [],
+  );
+
   const updatePhenomenon = useCallback(
     (
       id: string,
@@ -340,6 +360,12 @@ export function Workspace({ seed }: WorkspaceProps) {
             selectedPhenomenon={selectedPhenomenon}
             primaryIntervention={primaryIntervention}
             design={reformStrategyDesign}
+            pane1Intake={pane1Intake}
+            pane2Hypotheses={pane2Step1.hypotheses}
+            pane2Step3={pane2Step3}
+            pane3Step1={pane3Step1}
+            pane3FormKey={pane3FormKey}
+            onUpdatePane3Entry={updatePane3Step1Entry}
           />
           <SkillAssetizationPane
             selectedPhenomenon={selectedPhenomenon}

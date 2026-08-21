@@ -300,6 +300,65 @@ export const pane2Step3Schema = z.object({
 
 export type Pane2Step3 = z.infer<typeof pane2Step3Schema>;
 
+/**
+ * Pane3-Step1: 優先仮説ごとの本丸候補 / 最初の一手候補 / なぜここから。
+ * hypotheses index（0..2）と対応。未選択仮説のエントリも保持して復元を安定させる。
+ * 旧 shape（leverage_point / why）は parse 時に新フィールドへ移行する。
+ */
+export const DEFAULT_PANE3_STEP1_ENTRY = {
+  structural_core_candidate: "",
+  first_entry_candidate: "",
+  why_start_here: "",
+};
+
+export const DEFAULT_PANE3_STEP1_ENTRIES = [
+  { ...DEFAULT_PANE3_STEP1_ENTRY },
+  { ...DEFAULT_PANE3_STEP1_ENTRY },
+  { ...DEFAULT_PANE3_STEP1_ENTRY },
+] as const;
+
+export const DEFAULT_PANE3_STEP1 = {
+  entries: [
+    { ...DEFAULT_PANE3_STEP1_ENTRY },
+    { ...DEFAULT_PANE3_STEP1_ENTRY },
+    { ...DEFAULT_PANE3_STEP1_ENTRY },
+  ],
+};
+
+const pane3Step1EntryInputSchema = z.object({
+  structural_core_candidate: z.string().optional(),
+  first_entry_candidate: z.string().optional(),
+  why_start_here: z.string().optional(),
+  // 旧 koyasu:case:v1 Pane3-Step1（混在意味の単一フィールド）
+  leverage_point: z.string().optional(),
+  why: z.string().optional(),
+});
+
+export const pane3Step1EntrySchema = pane3Step1EntryInputSchema.transform(
+  (item) => ({
+    // 旧 leverage_point は「小さな変化」寄りだったため、最初の一手へ寄せる
+    structural_core_candidate: item.structural_core_candidate ?? "",
+    first_entry_candidate:
+      item.first_entry_candidate ?? item.leverage_point ?? "",
+    why_start_here: item.why_start_here ?? item.why ?? "",
+  }),
+);
+
+export type Pane3Step1Entry = z.infer<typeof pane3Step1EntrySchema>;
+
+export const pane3Step1Schema = z.object({
+  entries: z
+    .array(pane3Step1EntryInputSchema)
+    .default([...DEFAULT_PANE3_STEP1_ENTRIES])
+    .transform((items) =>
+      [...items, ...DEFAULT_PANE3_STEP1_ENTRIES]
+        .slice(0, 3)
+        .map((item) => pane3Step1EntrySchema.parse(item)),
+    ),
+});
+
+export type Pane3Step1 = z.infer<typeof pane3Step1Schema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
@@ -311,19 +370,25 @@ export const caseStorageSchema = z.object({
   }),
   pane2_step2: pane2Step2Schema.default(DEFAULT_PANE2_STEP2),
   pane2_step3: pane2Step3Schema.default(DEFAULT_PANE2_STEP3),
+  pane3_step1: pane3Step1Schema.default(DEFAULT_PANE3_STEP1),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
 
-/** Workspace 等、pane1/pane2 の省略書き込み時も storage 側で保持/default する */
+/** Workspace 等、pane1/pane2/pane3 の省略書き込み時も storage 側で保持/default する */
 export type CaseStorageWrite = Omit<
   CaseStorage,
-  "pane1_intake" | "pane2_step1" | "pane2_step2" | "pane2_step3"
+  | "pane1_intake"
+  | "pane2_step1"
+  | "pane2_step2"
+  | "pane2_step3"
+  | "pane3_step1"
 > & {
   pane1_intake?: Pane1Intake;
   pane2_step1?: Pane2Step1;
   pane2_step2?: Pane2Step2;
   pane2_step3?: Pane2Step3;
+  pane3_step1?: Pane3Step1;
 };
 
 export const learningStorageSchema = z.object({

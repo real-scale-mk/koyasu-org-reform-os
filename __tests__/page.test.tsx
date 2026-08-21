@@ -13,6 +13,8 @@ import {
 import {
   DEFAULT_PANE1_INTAKE,
   DEFAULT_PANE2_STEP1_HYPOTHESES,
+  DEFAULT_PANE2_STEP3,
+  DEFAULT_PANE3_STEP1,
   koyasuCaseSeedSchema,
 } from "@/lib/koyasu/schema";
 
@@ -118,6 +120,13 @@ describe("workspace-ui-kit smoke tests", () => {
         "育成の意図はあるのに、現場で機能不全が繰り返される",
       );
       expect(container.textContent).toContain("改革戦略設計");
+      expect(container.textContent).toContain(
+        "Pane3 Step1 | 本丸候補と、最初に手を入れる場面を分ける",
+      );
+      expect(container.textContent).toContain(
+        "Pane2で優先仮説を選択してください",
+      );
+      expect(container.textContent).toContain("詳細・旧分析");
       expect(container.textContent).toContain("SKILL資産化");
       expect(
         container.querySelector('[aria-label="Pane2 構造仮説 1"]'),
@@ -151,6 +160,41 @@ describe("workspace-ui-kit smoke tests", () => {
       expect(
         loadCaseStorage(seed).pane2_step1.hypotheses[0].structural_hypothesis,
       ).toBe("会議の決裁者が曖昧");
+      expect(loadCaseStorage(seed).pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
+
+      const selectPane3Button = Array.from(
+        container.querySelectorAll("button"),
+      ).find((button) =>
+        button.getAttribute("aria-label")?.includes("仮説 1 をPane3候補にする"),
+      );
+      expect(selectPane3Button).toBeDefined();
+      await act(async () => {
+        selectPane3Button?.dispatchEvent(
+          new MouseEvent("click", { bubbles: true }),
+        );
+        await Promise.resolve();
+      });
+
+      expect(container.textContent).toContain("優先構造仮説 1");
+      expect(container.textContent).toContain("構造上の本丸候補");
+      expect(container.textContent).toContain("最初に手を入れる場面候補");
+      expect(container.textContent).toContain("なぜ、ここから始めるのか");
+      expect(container.textContent).toContain("本丸 ≠");
+      expect(
+        container.querySelector(
+          '[aria-label="Pane3 構造上の本丸候補 仮説1"]',
+        ),
+      ).not.toBeNull();
+      expect(
+        container.querySelector(
+          '[aria-label="Pane3 最初に手を入れる場面候補 仮説1"]',
+        ),
+      ).not.toBeNull();
+      expect(
+        container.querySelector(
+          '[aria-label="Pane3 なぜここから始めるのか 仮説1"]',
+        ),
+      ).not.toBeNull();
 
       const consoleOutput = errorSpy.mock.calls
         .flatMap((call) => call.map(String))
@@ -179,25 +223,7 @@ describe("workspace-ui-kit smoke tests", () => {
     expect(loaded.pane2_step1.hypotheses).toEqual([
       ...DEFAULT_PANE2_STEP1_HYPOTHESES,
     ]);
-    expect(loaded.pane2_step3).toEqual({
-      evaluations: [
-        {
-          explanatory_power: "",
-          intervene_ability: "",
-          priority_reason: "",
-        },
-        {
-          explanatory_power: "",
-          intervene_ability: "",
-          priority_reason: "",
-        },
-        {
-          explanatory_power: "",
-          intervene_ability: "",
-          priority_reason: "",
-        },
-      ],
-      selected_for_pane3: [],
-    });
+    expect(loaded.pane2_step3).toEqual(DEFAULT_PANE2_STEP3);
+    expect(loaded.pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
   });
 });
