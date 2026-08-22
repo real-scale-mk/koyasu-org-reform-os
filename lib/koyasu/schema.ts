@@ -359,6 +359,178 @@ export const pane3Step1Schema = z.object({
 
 export type Pane3Step1 = z.infer<typeof pane3Step1Schema>;
 
+/**
+ * Pane3-Step2: 「最初に手を入れる場面」向けの4役割設計（基本案採用 + 補足・修正）。
+ * `roles` が正本。`entries` は後方互換（entries[0] に roles をミラー）。
+ */
+export const PANE3_STEP2_ROLE_DEFS = [
+  {
+    id: "discovery",
+    label: "発見・起票者",
+    ownsPlaceholder: "例: 現場でつまずきを見つけ、起票まで持っていく",
+    donePlaceholder: "例: 起票が記録され、推進責任者に渡った",
+    supportPlaceholder: "例: 起票テンプレへのアクセス、指摘しても安全な空気",
+  },
+  {
+    id: "driver",
+    label: "推進責任者",
+    ownsPlaceholder: "例: 場面を前に進め、詰まりを外す責任を持つ",
+    donePlaceholder: "例: 実務担当が着手できる状態まで決めた",
+    supportPlaceholder: "例: 部門横断の調整権限、スポンサーへのエスカレ経路",
+  },
+  {
+    id: "practitioner",
+    label: "実務担当",
+    ownsPlaceholder: "例: 決められた手順をその場で実行する",
+    donePlaceholder: "例: 合意した完了物（記録・通知など）を出した",
+    supportPlaceholder: "例: 手順の明確さ、作業時間の確保、失敗しても責められない枠",
+  },
+  {
+    id: "supporter",
+    label: "支援・承認者",
+    ownsPlaceholder: "例: 必要な承認・資源・後押しを出す",
+    donePlaceholder: "例: 承認または支援の可否を期限内に返した",
+    supportPlaceholder: "例: 判断材料の事前共有、承認の裁量範囲の明示",
+  },
+] as const;
+
+export type Pane3Step2RoleId = (typeof PANE3_STEP2_ROLE_DEFS)[number]["id"];
+
+export const DEFAULT_PANE3_STEP2_ROLE_FIELDS = {
+  adopted_default: false,
+  supplement: "",
+  owns: "",
+  completion_criteria: "",
+  support_authority: "",
+};
+
+/** Pane3-Step2: 4役割の静的な基本案（正解ではない出発点） */
+export const PANE3_STEP2_ROLE_DEFAULT_PROPOSALS: Record<
+  Pane3Step2RoleId,
+  { basic: string; completion: string; support: string }
+> = {
+  discovery: {
+    basic: "異常・不具合の事実を記録し、正式な問題対応プロセスへつなぐ",
+    completion:
+      "事実と影響が記録され、推進責任者へ正式に引き渡されている",
+    support:
+      "起票先・エスカレーション先が明確で、問題提起によって不利益を受けないこと",
+  },
+  driver: {
+    basic:
+      "問題の正面に立ち、実務担当・期限・完了条件を明確にし、進捗・調整を前へ進める",
+    completion:
+      "対策実行と必要な効果確認まで、責任連鎖が途切れず進んでいる",
+    support: "部門間調整権限、管理職の後ろ盾、必要な資源・時間",
+  },
+  practitioner: {
+    basic: "決められた範囲の調査・分析・対策を実行する",
+    completion:
+      "合意した成果物・対策が、決められた到達水準まで完了している",
+    support:
+      "必要情報へのアクセス、技術支援、他部門協力、判断待ちを解消する支援",
+  },
+  supporter: {
+    basic:
+      "推進責任者・実務担当が進められない障害を取り除き、必要な判断・承認・資源提供を行う",
+    completion:
+      "必要な判断が期限内に行われ、実行者が権限不足・調整不足で止まっていない",
+    support: "決裁権、部門間調整権限、上位者へのエスカレーション手段",
+  },
+};
+
+function createDefaultPane3Step2Roles() {
+  return {
+    discovery: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+    driver: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+    practitioner: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+    supporter: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+  };
+}
+
+export const DEFAULT_PANE3_STEP2_ENTRY = {
+  roles: createDefaultPane3Step2Roles(),
+};
+
+export const DEFAULT_PANE3_STEP2_ENTRIES = [
+  { roles: createDefaultPane3Step2Roles() },
+  { roles: createDefaultPane3Step2Roles() },
+  { roles: createDefaultPane3Step2Roles() },
+] as const;
+
+export const DEFAULT_PANE3_STEP2 = {
+  roles: createDefaultPane3Step2Roles(),
+  entries: [
+    { roles: createDefaultPane3Step2Roles() },
+    { roles: createDefaultPane3Step2Roles() },
+    { roles: createDefaultPane3Step2Roles() },
+  ],
+};
+
+const pane3Step2RoleFieldsSchema = z.object({
+  adopted_default: z.boolean().default(false),
+  supplement: z.string().default(""),
+  owns: z.string().default(""),
+  completion_criteria: z.string().default(""),
+  support_authority: z.string().default(""),
+});
+
+const pane3Step2RolesSchema = z.object({
+  discovery: pane3Step2RoleFieldsSchema.default({
+    ...DEFAULT_PANE3_STEP2_ROLE_FIELDS,
+  }),
+  driver: pane3Step2RoleFieldsSchema.default({
+    ...DEFAULT_PANE3_STEP2_ROLE_FIELDS,
+  }),
+  practitioner: pane3Step2RoleFieldsSchema.default({
+    ...DEFAULT_PANE3_STEP2_ROLE_FIELDS,
+  }),
+  supporter: pane3Step2RoleFieldsSchema.default({
+    ...DEFAULT_PANE3_STEP2_ROLE_FIELDS,
+  }),
+});
+
+export const pane3Step2EntrySchema = z.object({
+  roles: pane3Step2RolesSchema.default(createDefaultPane3Step2Roles()),
+});
+
+export type Pane3Step2RoleFields = z.infer<typeof pane3Step2RoleFieldsSchema>;
+export type Pane3Step2Entry = z.infer<typeof pane3Step2EntrySchema>;
+
+export const pane3Step2Schema = z
+  .object({
+    roles: pane3Step2RolesSchema.optional(),
+    entries: z
+      .array(
+        z.object({
+          roles: pane3Step2RolesSchema.optional(),
+        }),
+      )
+      .default([...DEFAULT_PANE3_STEP2_ENTRIES])
+      .transform((items) =>
+        [...items, ...DEFAULT_PANE3_STEP2_ENTRIES]
+          .slice(0, 3)
+          .map((item) => ({
+            roles: pane3Step2RolesSchema.parse(
+              item.roles ?? createDefaultPane3Step2Roles(),
+            ),
+          })),
+      ),
+  })
+  .transform(({ roles, entries }) => {
+    const canonicalRoles = pane3Step2RolesSchema.parse(
+      roles ?? entries[0]?.roles ?? createDefaultPane3Step2Roles(),
+    );
+    return {
+      roles: canonicalRoles,
+      entries: entries.map((entry, index) =>
+        index === 0 ? { roles: canonicalRoles } : entry,
+      ),
+    };
+  });
+
+export type Pane3Step2 = z.infer<typeof pane3Step2Schema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
@@ -371,6 +543,7 @@ export const caseStorageSchema = z.object({
   pane2_step2: pane2Step2Schema.default(DEFAULT_PANE2_STEP2),
   pane2_step3: pane2Step3Schema.default(DEFAULT_PANE2_STEP3),
   pane3_step1: pane3Step1Schema.default(DEFAULT_PANE3_STEP1),
+  pane3_step2: pane3Step2Schema.default(DEFAULT_PANE3_STEP2),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
@@ -383,12 +556,14 @@ export type CaseStorageWrite = Omit<
   | "pane2_step2"
   | "pane2_step3"
   | "pane3_step1"
+  | "pane3_step2"
 > & {
   pane1_intake?: Pane1Intake;
   pane2_step1?: Pane2Step1;
   pane2_step2?: Pane2Step2;
   pane2_step3?: Pane2Step3;
   pane3_step1?: Pane3Step1;
+  pane3_step2?: Pane3Step2;
 };
 
 export const learningStorageSchema = z.object({

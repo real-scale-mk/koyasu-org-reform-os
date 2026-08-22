@@ -18,6 +18,9 @@ import {
   type Pane2Step3,
   type Pane3Step1,
   type Pane3Step1Entry,
+  type Pane3Step2,
+  type Pane3Step2RoleFields,
+  type Pane3Step2RoleId,
   type Phenomenon,
 } from "@/lib/koyasu/schema";
 import { type PrimaryInterventionContext } from "@/lib/koyasu/phenomenon-diagnostics";
@@ -38,6 +41,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { InlineTextareaField, SectionLabel } from "@/components/primitives";
+import { Pane3RoleDesignStep } from "@/components/workspace/Pane3RoleDesignStep";
 import { StructuralHypothesisMap } from "@/components/workspace/StructuralHypothesisMap";
 
 type ReformStrategyDesignPaneProps = {
@@ -48,10 +52,15 @@ type ReformStrategyDesignPaneProps = {
   pane2Hypotheses: Pane2Hypothesis[];
   pane2Step3: Pane2Step3;
   pane3Step1: Pane3Step1;
+  pane3Step2: Pane3Step2;
   pane3FormKey: number;
   onUpdatePane3Entry: (
     index: number,
     patch: Partial<Pane3Step1Entry>,
+  ) => void;
+  onUpdatePane3Step2Role: (
+    roleId: Pane3Step2RoleId,
+    patch: Partial<Pane3Step2RoleFields>,
   ) => void;
 };
 
@@ -78,6 +87,137 @@ function StrategySection({
       </div>
       {children}
     </section>
+  );
+}
+
+function InterventionPremiseSummary({
+  pane1Intake,
+  selectedIndices,
+  pane2Hypotheses,
+  pane3Step1,
+}: {
+  pane1Intake: Pane1Intake;
+  selectedIndices: number[];
+  pane2Hypotheses: Pane2Hypothesis[];
+  pane3Step1: Pane3Step1;
+}) {
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const primaryIndex = selectedIndices[0] ?? 0;
+  const primaryStep1 =
+    pane3Step1.entries[primaryIndex] ?? { ...DEFAULT_PANE3_STEP1_ENTRY };
+
+  return (
+    <Card size="sm" className="border-primary/30 bg-primary/5">
+      <CardContent className="flex flex-col gap-2 p-3">
+        <SectionLabel
+          tone="conclusion"
+          className="text-xs normal-case tracking-normal"
+        >
+          今回の介入前提
+        </SectionLabel>
+        <dl className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-[10px] text-muted-foreground">Pane1 GAP</dt>
+            <dd className="text-[11px] leading-relaxed text-foreground">
+              {pane1Intake.gap.trim() || "Pane1でまだ未記入です"}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-[10px] text-muted-foreground">
+              優先構造仮説（Pane2）
+            </dt>
+            <dd className="flex flex-col gap-0.5">
+              {selectedIndices.map((index) => (
+                <span
+                  key={`premise-hyp-${index}`}
+                  className="text-[11px] leading-relaxed text-foreground"
+                >
+                  {index + 1}.{" "}
+                  {pane2Hypotheses[index]?.structural_hypothesis.trim() ||
+                    "（未記入）"}
+                </span>
+              ))}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-[10px] text-muted-foreground">
+              構造上の本丸候補（Step1）
+            </dt>
+            <dd className="text-[11px] leading-relaxed text-foreground">
+              {primaryStep1.structural_core_candidate.trim() || "（未記入）"}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-[10px] text-muted-foreground">
+              最初に手を入れる場面（Step1）
+            </dt>
+            <dd className="text-[11px] leading-relaxed text-foreground">
+              {primaryStep1.first_entry_candidate.trim() || "（未記入）"}
+            </dd>
+          </div>
+        </dl>
+
+        <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <CollapsibleTrigger
+            nativeButton={true}
+            render={
+              <button
+                type="button"
+                className={cn(
+                  "group/premise flex w-full items-center justify-between gap-2 rounded-md px-1 py-1 text-left text-[11px] text-muted-foreground",
+                  "outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50",
+                )}
+              />
+            }
+          >
+            <span>前提を詳しく見る</span>
+            <ChevronDown
+              aria-hidden
+              className="size-3.5 shrink-0 transition-transform in-data-[panel-open]:rotate-180"
+            />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="flex flex-col gap-2 border-t border-border pt-2">
+              {selectedIndices.map((hypothesisIndex) => {
+                const hypothesis = pane2Hypotheses[hypothesisIndex];
+                const step1Entry =
+                  pane3Step1.entries[hypothesisIndex] ?? {
+                    ...DEFAULT_PANE3_STEP1_ENTRY,
+                  };
+                return (
+                  <div
+                    key={`premise-detail-${hypothesisIndex}`}
+                    className="flex flex-col gap-1 rounded-lg border border-border bg-card p-2.5"
+                  >
+                    <p className="text-[10px] font-medium text-muted-foreground">
+                      優先構造仮説 {hypothesisIndex + 1}
+                    </p>
+                    <p className="text-[11px] leading-relaxed text-foreground">
+                      {hypothesis?.structural_hypothesis.trim() || "（未記入）"}
+                    </p>
+                    {hypothesis?.evidence.trim() ? (
+                      <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        根拠: {hypothesis.evidence.trim()}
+                      </p>
+                    ) : null}
+                    {hypothesis?.follow_up_question.trim() ? (
+                      <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        確認したいこと: {hypothesis.follow_up_question.trim()}
+                      </p>
+                    ) : null}
+                    {step1Entry.why_start_here.trim() ? (
+                      <p className="text-[10px] leading-relaxed text-muted-foreground">
+                        なぜここから: {step1Entry.why_start_here.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -381,13 +521,21 @@ export function ReformStrategyDesignPane({
   pane2Hypotheses,
   pane2Step3,
   pane3Step1,
+  pane3Step2,
   pane3FormKey,
   onUpdatePane3Entry,
+  onUpdatePane3Step2Role,
 }: ReformStrategyDesignPaneProps) {
   const [legacyOpen, setLegacyOpen] = useState(false);
   const [hypothesisMapOpen, setHypothesisMapOpen] = useState(false);
 
   const selectedIndices = pane2Step3.selected_for_pane3;
+  const primaryIndex = selectedIndices[0] ?? 0;
+  const primaryStep1Entry =
+    pane3Step1.entries[primaryIndex] ?? { ...DEFAULT_PANE3_STEP1_ENTRY };
+  const firstEntryScene =
+    primaryStep1Entry.first_entry_candidate.trim() ||
+    "（Step1で「最初に手を入れる場面候補」を記入するとここに表示されます）";
 
   return (
     <>
@@ -395,25 +543,20 @@ export function ReformStrategyDesignPane({
         <header className="flex h-auto min-h-12 shrink-0 flex-col justify-center gap-0.5 border-b border-border px-4 py-2">
           <h2 className="text-sm font-semibold text-conclusion">改革戦略設計</h2>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Pane3 Step1 | 本丸候補と、最初に手を入れる場面を分ける
+            Pane3 Step1–2 | 本丸／最初の一手と、役割の引き受け設計
           </p>
         </header>
 
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-4 p-4">
-            <Card size="sm" className="border-primary/30 bg-primary/5">
-              <CardContent className="flex flex-col gap-1 p-3">
-                <SectionLabel
-                  tone="conclusion"
-                  className="text-xs normal-case tracking-normal"
-                >
-                  Pane1 GAP（参照）
-                </SectionLabel>
-                <p className="text-sm leading-relaxed text-foreground">
-                  {pane1Intake.gap.trim() || "Pane1でまだ未記入です"}
-                </p>
-              </CardContent>
-            </Card>
+            {selectedIndices.length > 0 ? (
+              <InterventionPremiseSummary
+                pane1Intake={pane1Intake}
+                selectedIndices={selectedIndices}
+                pane2Hypotheses={pane2Hypotheses}
+                pane3Step1={pane3Step1}
+              />
+            ) : null}
 
             <Card size="sm" className="border-border bg-muted/30">
               <CardContent className="flex flex-col gap-2 p-3">
@@ -473,6 +616,18 @@ export function ReformStrategyDesignPane({
                 })}
               </div>
             )}
+
+            {selectedIndices.length > 0 ? (
+              <>
+                <Separator />
+                <Pane3RoleDesignStep
+                  firstEntryScene={firstEntryScene}
+                  pane3Step2={pane3Step2}
+                  pane3FormKey={pane3FormKey}
+                  onUpdateRole={onUpdatePane3Step2Role}
+                />
+              </>
+            ) : null}
 
             <Separator />
 

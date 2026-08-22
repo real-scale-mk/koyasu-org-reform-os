@@ -15,6 +15,7 @@ import {
   DEFAULT_PANE2_STEP1_HYPOTHESES,
   DEFAULT_PANE2_STEP3,
   DEFAULT_PANE3_STEP1,
+  DEFAULT_PANE3_STEP2,
   koyasuCaseSeedSchema,
 } from "@/lib/koyasu/schema";
 
@@ -121,7 +122,7 @@ describe("workspace-ui-kit smoke tests", () => {
       );
       expect(container.textContent).toContain("改革戦略設計");
       expect(container.textContent).toContain(
-        "Pane3 Step1 | 本丸候補と、最初に手を入れる場面を分ける",
+        "Pane3 Step1–2 | 本丸／最初の一手と、役割の引き受け設計",
       );
       expect(container.textContent).toContain(
         "Pane2で優先仮説を選択してください",
@@ -161,6 +162,7 @@ describe("workspace-ui-kit smoke tests", () => {
         loadCaseStorage(seed).pane2_step1.hypotheses[0].structural_hypothesis,
       ).toBe("会議の決裁者が曖昧");
       expect(loadCaseStorage(seed).pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
+      expect(loadCaseStorage(seed).pane3_step2).toEqual(DEFAULT_PANE3_STEP2);
 
       const selectPane3Button = Array.from(
         container.querySelectorAll("button"),
@@ -180,6 +182,24 @@ describe("workspace-ui-kit smoke tests", () => {
       expect(container.textContent).toContain("最初に手を入れる場面候補");
       expect(container.textContent).toContain("なぜ、ここから始めるのか");
       expect(container.textContent).toContain("本丸 ≠");
+      expect(container.textContent).toContain(
+        "Pane3 Step2 | 誰が何を引き受けるか",
+      );
+      expect(container.textContent).toContain(
+        "責任を明確にするだけでは不十分です。必要な権限・支援・完了条件もセットで確認します。",
+      );
+      expect(container.textContent).toContain("今回の介入前提");
+      expect(container.textContent).toContain("今回、役割を設計する場面");
+      expect(container.textContent).toContain("発見・起票者");
+      expect(container.textContent).toContain("推進責任者");
+      expect(container.textContent).toContain("実務担当");
+      expect(container.textContent).toContain("支援・承認者");
+      expect(container.textContent).toContain("基本案");
+      expect(container.textContent).toContain("この基本案で進める");
+      expect(container.textContent).toContain("補足・修正する");
+      expect(container.textContent).toContain(
+        "以下の基本案は出発点の提案です。正解ではありません",
+      );
       expect(
         container.querySelector(
           '[aria-label="Pane3 構造上の本丸候補 仮説1"]',
@@ -195,6 +215,55 @@ describe("workspace-ui-kit smoke tests", () => {
           '[aria-label="Pane3 なぜここから始めるのか 仮説1"]',
         ),
       ).not.toBeNull();
+
+      const supplementTrigger = Array.from(
+        container.querySelectorAll("button"),
+      ).find((button) => button.textContent?.includes("補足・修正する"));
+      expect(supplementTrigger).toBeDefined();
+      await act(async () => {
+        supplementTrigger?.dispatchEvent(
+          new MouseEvent("click", { bubbles: true }),
+        );
+        await Promise.resolve();
+      });
+
+      expect(
+        container.querySelector(
+          '[aria-label="Pane3 Step2 発見・起票者 補足・修正"]',
+        ),
+      ).not.toBeNull();
+      expect(container.textContent).not.toContain("未決定に戻す");
+
+      const adoptButton = Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("この基本案で進める"),
+      );
+      expect(adoptButton).toBeDefined();
+      await act(async () => {
+        adoptButton?.dispatchEvent(
+          new MouseEvent("click", { bubbles: true }),
+        );
+        await Promise.resolve();
+      });
+
+      expect(container.textContent).toContain("✓ 基本案で進める");
+      expect(container.textContent).toContain("未決定に戻す");
+
+      const resetButton = Array.from(container.querySelectorAll("button")).find(
+        (button) => button.textContent?.includes("未決定に戻す"),
+      );
+      expect(resetButton).toBeDefined();
+      await act(async () => {
+        resetButton?.dispatchEvent(
+          new MouseEvent("click", { bubbles: true }),
+        );
+        await Promise.resolve();
+      });
+
+      expect(container.textContent).not.toContain("未決定に戻す");
+      expect(container.textContent).toContain("この基本案で進める");
+      expect(
+        loadCaseStorage(seed).pane3_step2.roles.discovery.adopted_default,
+      ).toBe(false);
 
       const consoleOutput = errorSpy.mock.calls
         .flatMap((call) => call.map(String))
@@ -225,5 +294,6 @@ describe("workspace-ui-kit smoke tests", () => {
     ]);
     expect(loaded.pane2_step3).toEqual(DEFAULT_PANE2_STEP3);
     expect(loaded.pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
+    expect(loaded.pane3_step2).toEqual(DEFAULT_PANE3_STEP2);
   });
 });

@@ -8,6 +8,8 @@ import {
   DEFAULT_PANE2_STEP3,
   DEFAULT_PANE3_STEP1,
   DEFAULT_PANE3_STEP1_ENTRY,
+  DEFAULT_PANE3_STEP2,
+  DEFAULT_PANE3_STEP2_ROLE_FIELDS,
   type KoyasuCaseSeed,
 } from "@/lib/koyasu/schema";
 import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
@@ -58,6 +60,7 @@ describe("caseStorageSchema pane1/pane2 後方互換", () => {
     expect(result.data.pane2_step2).toEqual(DEFAULT_PANE2_STEP2);
     expect(result.data.pane2_step3).toEqual(DEFAULT_PANE2_STEP3);
     expect(result.data.pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
+    expect(result.data.pane3_step2).toEqual(DEFAULT_PANE3_STEP2);
   });
 
   it("部分的な pane1_intake は欠落フィールドを default で補完する", () => {
@@ -497,5 +500,241 @@ describe("loadCaseStorage / saveCaseStorage pane3_step1", () => {
       first_entry_candidate: "最初の一手",
       why_start_here: "理由",
     });
+  });
+});
+
+describe("loadCaseStorage / saveCaseStorage pane3_step2", () => {
+  it("Pane3-Step2 を保存後に再読込しても pane1/pane2/pane3_step1 を壊さず復元できる", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane1_intake: {
+        ...DEFAULT_PANE1_INTAKE,
+        gap: "責任連鎖が成立していない",
+      },
+      pane2_step3: {
+        evaluations: DEFAULT_PANE2_STEP3.evaluations,
+        selected_for_pane3: [0, 1],
+      },
+      pane3_step1: {
+        entries: [
+          {
+            structural_core_candidate: "本丸",
+            first_entry_candidate: "会議の最後に閉じる",
+            why_start_here: "上流から",
+          },
+          {
+            structural_core_candidate: "断絶",
+            first_entry_candidate: "起票後の推進責任者ルール",
+            why_start_here: "接続点",
+          },
+          { ...DEFAULT_PANE3_STEP1_ENTRY },
+        ],
+      },
+      pane3_step2: {
+        entries: [
+          {
+            roles: {
+              discovery: {
+                owns: "つまずきを起票する",
+                completion_criteria: "起票が渡った",
+                support_authority: "起票テンプレ",
+              },
+              driver: {
+                owns: "詰まりを外す",
+                completion_criteria: "実務が着手できる",
+                support_authority: "横断調整権限",
+              },
+              practitioner: {
+                owns: "手順を実行する",
+                completion_criteria: "記録を出す",
+                support_authority: "作業時間の確保",
+              },
+              supporter: {
+                owns: "承認を出す",
+                completion_criteria: "期限内に可否を返す",
+                support_authority: "裁量範囲の明示",
+              },
+            },
+          },
+          {
+            roles: {
+              discovery: {
+                ...DEFAULT_PANE3_STEP2_ROLE_FIELDS,
+                owns: "仮説2の発見",
+              },
+              driver: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              practitioner: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              supporter: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+            },
+          },
+          {
+            roles: {
+              discovery: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              driver: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              practitioner: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              supporter: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+            },
+          },
+        ],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane1_intake.gap).toBe("責任連鎖が成立していない");
+    expect(loaded.pane3_step1.entries[0].first_entry_candidate).toBe(
+      "会議の最後に閉じる",
+    );
+    expect(loaded.pane3_step2.entries[0].roles.discovery).toEqual({
+      adopted_default: false,
+      supplement: "",
+      owns: "つまずきを起票する",
+      completion_criteria: "起票が渡った",
+      support_authority: "起票テンプレ",
+    });
+    expect(loaded.pane3_step2.roles.discovery).toEqual({
+      adopted_default: false,
+      supplement: "",
+      owns: "つまずきを起票する",
+      completion_criteria: "起票が渡った",
+      support_authority: "起票テンプレ",
+    });
+    expect(loaded.pane3_step2.entries[0].roles.supporter.owns).toBe(
+      "承認を出す",
+    );
+    expect(loaded.pane3_step2.entries[1].roles.discovery.owns).toBe(
+      "仮説2の発見",
+    );
+    expect(loaded.pane3_step2.entries).toHaveLength(3);
+  });
+
+  it("pane3_step2 省略保存時は既存 localStorage の値を維持する", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane3_step2: {
+        entries: [
+          {
+            roles: {
+              discovery: {
+                owns: "維持される引き受け",
+                completion_criteria: "維持完了条件",
+                support_authority: "維持支援",
+              },
+              driver: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              practitioner: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+              supporter: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+            },
+          },
+          ...DEFAULT_PANE3_STEP2.entries.slice(1),
+        ],
+      },
+    });
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane3_step1: {
+        entries: [
+          {
+            structural_core_candidate: "別更新",
+            first_entry_candidate: "場面",
+            why_start_here: "理由",
+          },
+          ...DEFAULT_PANE3_STEP1.entries.slice(1),
+        ],
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane3_step1.entries[0].structural_core_candidate).toBe(
+      "別更新",
+    );
+    expect(loaded.pane3_step2.entries[0].roles.discovery).toEqual({
+      adopted_default: false,
+      supplement: "",
+      owns: "維持される引き受け",
+      completion_criteria: "維持完了条件",
+      support_authority: "維持支援",
+    });
+  });
+
+  it("旧 koyasu:case:v1（pane3_step2 なし）でも default が補われる", () => {
+    const result = caseStorageSchema.safeParse(legacyCaseV1);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane3_step2).toEqual(DEFAULT_PANE3_STEP2);
+  });
+
+  it("不完全な roles でも欠けた役割フィールドを default で補う", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane3_step2: {
+        entries: [
+          {
+            roles: {
+              discovery: { owns: "発見のみ" },
+            },
+          },
+        ],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane3_step2.entries[0].roles.discovery).toEqual({
+      adopted_default: false,
+      supplement: "",
+      owns: "発見のみ",
+      completion_criteria: "",
+      support_authority: "",
+    });
+    expect(result.data.pane3_step2.entries[0].roles.driver).toEqual(
+      DEFAULT_PANE3_STEP2_ROLE_FIELDS,
+    );
+    expect(result.data.pane3_step2.entries).toHaveLength(3);
+  });
+
+  it("Pane3-Step2 の基本案採用と補足を保存後に再読込できる", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane3_step2: {
+        roles: {
+          discovery: {
+            adopted_default: true,
+            supplement: "起票はTeamsチャネル経由",
+            owns: "",
+            completion_criteria: "",
+            support_authority: "",
+          },
+          driver: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS, adopted_default: true },
+          practitioner: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+          supporter: { ...DEFAULT_PANE3_STEP2_ROLE_FIELDS },
+        },
+        entries: DEFAULT_PANE3_STEP2.entries,
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane3_step2.roles.discovery).toEqual({
+      adopted_default: true,
+      supplement: "起票はTeamsチャネル経由",
+      owns: "",
+      completion_criteria: "",
+      support_authority: "",
+    });
+    expect(loaded.pane3_step2.entries[0].roles.discovery).toEqual(
+      loaded.pane3_step2.roles.discovery,
+    );
   });
 });
