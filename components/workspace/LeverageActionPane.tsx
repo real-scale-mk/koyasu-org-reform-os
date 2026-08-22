@@ -21,6 +21,10 @@ import {
   type Pane3Step2,
   type Pane3Step2RoleFields,
   type Pane3Step2RoleId,
+  type Pane3Step3,
+  type Pane3Step3Backing,
+  type Pane3Step3Field,
+  type Pane3Step3FieldId,
   type Phenomenon,
 } from "@/lib/koyasu/schema";
 import { type PrimaryInterventionContext } from "@/lib/koyasu/phenomenon-diagnostics";
@@ -42,6 +46,7 @@ import {
 } from "@/components/ui/sheet";
 import { InlineTextareaField, SectionLabel } from "@/components/primitives";
 import { Pane3RoleDesignStep } from "@/components/workspace/Pane3RoleDesignStep";
+import { Pane3BabyStepStep } from "@/components/workspace/Pane3BabyStepStep";
 import { StructuralHypothesisMap } from "@/components/workspace/StructuralHypothesisMap";
 
 type ReformStrategyDesignPaneProps = {
@@ -53,6 +58,7 @@ type ReformStrategyDesignPaneProps = {
   pane2Step3: Pane2Step3;
   pane3Step1: Pane3Step1;
   pane3Step2: Pane3Step2;
+  pane3Step3: Pane3Step3;
   pane3FormKey: number;
   onUpdatePane3Entry: (
     index: number,
@@ -62,6 +68,11 @@ type ReformStrategyDesignPaneProps = {
     roleId: Pane3Step2RoleId,
     patch: Partial<Pane3Step2RoleFields>,
   ) => void;
+  onUpdatePane3Step3Field: (
+    fieldId: Pane3Step3FieldId,
+    patch: Partial<Pane3Step3Field>,
+  ) => void;
+  onUpdatePane3Step3Backing: (patch: Partial<Pane3Step3Backing>) => void;
 };
 
 function StrategySection({
@@ -522,9 +533,12 @@ export function ReformStrategyDesignPane({
   pane2Step3,
   pane3Step1,
   pane3Step2,
+  pane3Step3,
   pane3FormKey,
   onUpdatePane3Entry,
   onUpdatePane3Step2Role,
+  onUpdatePane3Step3Field,
+  onUpdatePane3Step3Backing,
 }: ReformStrategyDesignPaneProps) {
   const [legacyOpen, setLegacyOpen] = useState(false);
   const [hypothesisMapOpen, setHypothesisMapOpen] = useState(false);
@@ -543,7 +557,7 @@ export function ReformStrategyDesignPane({
         <header className="flex h-auto min-h-12 shrink-0 flex-col justify-center gap-0.5 border-b border-border px-4 py-2">
           <h2 className="text-sm font-semibold text-conclusion">改革戦略設計</h2>
           <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Pane3 Step1–2 | 本丸／最初の一手と、役割の引き受け設計
+            Pane3 Step1–3 | 本丸／最初の一手、役割の引き受け、今回試す BABY STEP
           </p>
         </header>
 
@@ -625,6 +639,20 @@ export function ReformStrategyDesignPane({
                   pane3Step2={pane3Step2}
                   pane3FormKey={pane3FormKey}
                   onUpdateRole={onUpdatePane3Step2Role}
+                />
+
+                <Separator />
+
+                <Pane3BabyStepStep
+                  firstEntryScene={firstEntryScene}
+                  toBe={pane1Intake.to_be}
+                  pane3Step1={pane3Step1}
+                  pane3Step2={pane3Step2}
+                  pane3Step3={pane3Step3}
+                  pane3FormKey={pane3FormKey}
+                  primaryHypothesisIndex={primaryIndex}
+                  onUpdateField={onUpdatePane3Step3Field}
+                  onUpdateBacking={onUpdatePane3Step3Backing}
                 />
               </>
             ) : null}

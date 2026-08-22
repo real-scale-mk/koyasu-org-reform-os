@@ -531,6 +531,120 @@ export const pane3Step2Schema = z
 
 export type Pane3Step2 = z.infer<typeof pane3Step2Schema>;
 
+/**
+ * Pane3-Step3: 今回試す BABY STEP（構造仮説を現場で小さく確かめる最小の介入）。
+ * 最終成果の測定は Pane4。ここでは「1件実行できたか」までを扱う。
+ */
+export const PANE3_STEP3_FIELD_DEFS = [
+  {
+    id: "what_to_try",
+    label: "何を試すか",
+    placeholder: "次の1件で試す最小の介入",
+  },
+  {
+    id: "who_does_it",
+    label: "誰がやるか",
+    placeholder: "役割名でよい（人名は不要）",
+  },
+  {
+    id: "when_to_do",
+    label: "いつまでに／いつ実施するか",
+    placeholder: "次の対象案件が発生したときの実施タイミング",
+  },
+  {
+    id: "success_criteria",
+    label: "何ができたら「まず成功」と言えるか",
+    placeholder: "この一手を1件実行できたかの完了条件",
+  },
+] as const;
+
+export type Pane3Step3FieldId = (typeof PANE3_STEP3_FIELD_DEFS)[number]["id"];
+
+export const PANE3_STEP3_DEFAULT_PROPOSALS: Record<Pane3Step3FieldId, string> =
+  {
+    what_to_try:
+      "次に発生する不具合案件1件について、最初の対応会議で、推進責任者・実務担当・期限・完了条件・支援責任者を明示して記録する。",
+    who_does_it: "会議を主催する管理職または推進責任者。",
+    when_to_do:
+      "次に対象となる不具合案件が発生した際の最初の対応会議で実施する。",
+    success_criteria:
+      "会議終了時点で、誰が・何を・いつまでに・どこまで・誰が支援するかが記録され、関係者で共有されている。",
+  };
+
+export const DEFAULT_PANE3_STEP3_FIELD = {
+  adopted_default: false,
+  supplement: "",
+  value: "",
+};
+
+/** 推進責任者とは別概念。組織的なお墨付き・判断権限の有無 */
+export const PANE3_STEP3_BACKING_STATUS_VALUES = [
+  "unconfirmed",
+  "confirmed",
+] as const;
+
+export type Pane3Step3BackingStatus =
+  (typeof PANE3_STEP3_BACKING_STATUS_VALUES)[number];
+
+export const PANE3_STEP3_BACKING_PROPOSAL =
+  "この試行を組織として行うことを、責任ある管理者・トップが支持し、推進役が必要な判断・調整を行えることを明示する。";
+
+export const PANE3_STEP3_STUMBLE_OBSERVATION_POINTS = [
+  "役割の曖昧さ",
+  "権限不足",
+  "支援不足",
+  "判断待ち",
+  "部門間調整",
+  "完了条件の曖昧さ",
+] as const;
+
+export const DEFAULT_PANE3_STEP3_BACKING = {
+  status: "unconfirmed" as const,
+  supplement: "",
+};
+
+export const DEFAULT_PANE3_STEP3 = {
+  what_to_try: { ...DEFAULT_PANE3_STEP3_FIELD },
+  who_does_it: { ...DEFAULT_PANE3_STEP3_FIELD },
+  when_to_do: { ...DEFAULT_PANE3_STEP3_FIELD },
+  success_criteria: { ...DEFAULT_PANE3_STEP3_FIELD },
+  backing: { ...DEFAULT_PANE3_STEP3_BACKING },
+};
+
+const pane3Step3FieldSchema = z.object({
+  adopted_default: z.boolean().default(false),
+  supplement: z.string().default(""),
+  value: z.string().default(""),
+});
+
+const pane3Step3BackingSchema = z.object({
+  status: z.enum(PANE3_STEP3_BACKING_STATUS_VALUES).default("unconfirmed"),
+  supplement: z.string().default(""),
+});
+
+export const pane3Step3Schema = z.object({
+  what_to_try: pane3Step3FieldSchema.default({
+    ...DEFAULT_PANE3_STEP3_FIELD,
+  }),
+  who_does_it: pane3Step3FieldSchema.default({
+    ...DEFAULT_PANE3_STEP3_FIELD,
+  }),
+  when_to_do: pane3Step3FieldSchema.default({
+    ...DEFAULT_PANE3_STEP3_FIELD,
+  }),
+  success_criteria: pane3Step3FieldSchema.default({
+    ...DEFAULT_PANE3_STEP3_FIELD,
+  }),
+  // 旧 pane3_step3 に無い場合は default（4項目の復元を落とさない）
+  backing: pane3Step3BackingSchema.default({
+    ...DEFAULT_PANE3_STEP3_BACKING,
+  }),
+});
+
+export type Pane3Step3Field = z.infer<typeof pane3Step3FieldSchema>;
+export type Pane3Step3Backing = z.infer<typeof pane3Step3BackingSchema>;
+export type Pane3Step3 = z.infer<typeof pane3Step3Schema>;
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
@@ -544,6 +658,7 @@ export const caseStorageSchema = z.object({
   pane2_step3: pane2Step3Schema.default(DEFAULT_PANE2_STEP3),
   pane3_step1: pane3Step1Schema.default(DEFAULT_PANE3_STEP1),
   pane3_step2: pane3Step2Schema.default(DEFAULT_PANE3_STEP2),
+  pane3_step3: pane3Step3Schema.default(DEFAULT_PANE3_STEP3),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
@@ -557,6 +672,7 @@ export type CaseStorageWrite = Omit<
   | "pane2_step3"
   | "pane3_step1"
   | "pane3_step2"
+  | "pane3_step3"
 > & {
   pane1_intake?: Pane1Intake;
   pane2_step1?: Pane2Step1;
@@ -564,6 +680,7 @@ export type CaseStorageWrite = Omit<
   pane2_step3?: Pane2Step3;
   pane3_step1?: Pane3Step1;
   pane3_step2?: Pane3Step2;
+  pane3_step3?: Pane3Step3;
 };
 
 export const learningStorageSchema = z.object({
