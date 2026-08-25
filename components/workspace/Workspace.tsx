@@ -6,7 +6,7 @@
  * Pane1: 診断ワークスペース
  * Pane2: 構造分析
  * Pane3: 改革戦略設計
- * Pane4: SKILL資産化
+ * Pane4: 学びと成果（実行からのフィードバック）
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -19,6 +19,7 @@ import {
   DEFAULT_PANE3_STEP1,
   DEFAULT_PANE3_STEP2,
   DEFAULT_PANE3_STEP3,
+  DEFAULT_PANE4_V1,
   DEFAULT_PHENOMENON_ID,
   type KoyasuCaseSeed,
   type Pane1Intake,
@@ -36,6 +37,9 @@ import {
   type Pane3Step3Backing,
   type Pane3Step3Field,
   type Pane3Step3FieldId,
+  type Pane4V1,
+  type Pane4V1MultiPerspectivePatch,
+  type Pane4V1Review,
   type Phenomenon,
   type ResponsibilityChainTransitionId,
 } from "@/lib/koyasu/schema";
@@ -84,10 +88,12 @@ export function Workspace({ seed }: WorkspaceProps) {
   const [pane3Step1, setPane3Step1] = useState<Pane3Step1>(DEFAULT_PANE3_STEP1);
   const [pane3Step2, setPane3Step2] = useState<Pane3Step2>(DEFAULT_PANE3_STEP2);
   const [pane3Step3, setPane3Step3] = useState<Pane3Step3>(DEFAULT_PANE3_STEP3);
+  const [pane4V1, setPane4V1] = useState<Pane4V1>(DEFAULT_PANE4_V1);
   // Inline* は defaultValue のため、復元後に key を更新してリマウントする
   const [intakeFormKey, setIntakeFormKey] = useState(0);
   const [pane2FormKey, setPane2FormKey] = useState(0);
   const [pane3FormKey, setPane3FormKey] = useState(0);
+  const [pane4FormKey, setPane4FormKey] = useState(0);
   const [pane4Open, setPane4Open] = useState(true);
   const [casePersistReady, setCasePersistReady] = useState(false);
 
@@ -105,9 +111,11 @@ export function Workspace({ seed }: WorkspaceProps) {
       setPane3Step1(stored.pane3_step1);
       setPane3Step2(stored.pane3_step2);
       setPane3Step3(stored.pane3_step3);
+      setPane4V1(stored.pane4_v1);
       setIntakeFormKey((key) => key + 1);
       setPane2FormKey((key) => key + 1);
       setPane3FormKey((key) => key + 1);
+      setPane4FormKey((key) => key + 1);
       setCasePersistReady(true);
     }, 0);
     return () => {
@@ -132,6 +140,7 @@ export function Workspace({ seed }: WorkspaceProps) {
         pane3_step1: pane3Step1,
         pane3_step2: pane3Step2,
         pane3_step3: pane3Step3,
+        pane4_v1: pane4V1,
       });
     },
     [
@@ -145,6 +154,7 @@ export function Workspace({ seed }: WorkspaceProps) {
       pane3Step1,
       pane3Step2,
       pane3Step3,
+      pane4V1,
       casePersistReady,
     ],
   );
@@ -341,6 +351,102 @@ export function Workspace({ seed }: WorkspaceProps) {
     [],
   );
 
+  const updatePane4Step1 = useCallback((patch: Partial<Pane4V1["step1"]>) => {
+    setPane4V1((prev) => ({
+      ...prev,
+      step1: { ...prev.step1, ...patch },
+    }));
+  }, []);
+
+  const updatePane4Step2 = useCallback((patch: Partial<Pane4V1["step2"]>) => {
+    setPane4V1((prev) => ({
+      ...prev,
+      step2: { ...prev.step2, ...patch },
+    }));
+  }, []);
+
+  const updatePane4Step3 = useCallback((patch: Partial<Pane4V1["step3"]>) => {
+    setPane4V1((prev) => ({
+      ...prev,
+      step3: { ...prev.step3, ...patch },
+    }));
+  }, []);
+
+  const updatePane4Review = useCallback(
+    (index: number, patch: Partial<Pane4V1Review>) => {
+      setPane4V1((prev) => ({
+        ...prev,
+        step4: {
+          reviews: prev.step4.reviews.map((review, currentIndex) =>
+            currentIndex === index ? { ...review, ...patch } : review,
+          ),
+        },
+      }));
+    },
+    [],
+  );
+
+  const updatePane4Step5 = useCallback((patch: Partial<Pane4V1["step5"]>) => {
+    setPane4V1((prev) => ({
+      ...prev,
+      step5: { ...prev.step5, ...patch },
+    }));
+  }, []);
+
+  const updatePane4Resistance = useCallback(
+    (patch: Partial<Pane4V1["resistance_observation"]>) => {
+      setPane4V1((prev) => ({
+        ...prev,
+        resistance_observation: {
+          ...prev.resistance_observation,
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
+
+  const updatePane4MultiPerspectiveReview = useCallback(
+    (patch: Pane4V1MultiPerspectivePatch) => {
+      setPane4V1((prev) => {
+        const current = prev.multi_perspective_review;
+        return {
+          ...prev,
+          multi_perspective_review: {
+            ...current,
+            ...patch,
+            stability: {
+              ...current.stability,
+              ...patch.stability,
+            },
+            reform: {
+              ...current.reform,
+              ...patch.reform,
+            },
+            standard: {
+              ...current.standard,
+              ...patch.standard,
+            },
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const updatePane4LearningMemo = useCallback(
+    (patch: Partial<Pane4V1["learning_memo"]>) => {
+      setPane4V1((prev) => ({
+        ...prev,
+        learning_memo: {
+          ...prev.learning_memo,
+          ...patch,
+        },
+      }));
+    },
+    [],
+  );
+
   const updatePhenomenon = useCallback(
     (
       id: string,
@@ -439,8 +545,23 @@ export function Workspace({ seed }: WorkspaceProps) {
           <SkillAssetizationPane
             selectedPhenomenon={selectedPhenomenon}
             assetization={skillAssetization}
+            pane2Hypotheses={pane2Step1.hypotheses}
+            selectedHypothesisIndexes={pane2Step3.selected_for_pane3}
+            pane3Step3={pane3Step3}
+            pane4V1={pane4V1}
+            pane4FormKey={pane4FormKey}
             pane4Open={pane4Open}
             onTogglePane4={togglePane4}
+            onUpdatePane4Step1={updatePane4Step1}
+            onUpdatePane4Step2={updatePane4Step2}
+            onUpdatePane4Step3={updatePane4Step3}
+            onUpdatePane4Review={updatePane4Review}
+            onUpdatePane4Step5={updatePane4Step5}
+            onUpdatePane4Resistance={updatePane4Resistance}
+            onUpdatePane4MultiPerspectiveReview={
+              updatePane4MultiPerspectiveReview
+            }
+            onUpdatePane4LearningMemo={updatePane4LearningMemo}
           />
         </div>
       </SidebarInset>

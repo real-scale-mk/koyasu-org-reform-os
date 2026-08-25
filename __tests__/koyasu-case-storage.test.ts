@@ -13,6 +13,7 @@ import {
   DEFAULT_PANE3_STEP3,
   DEFAULT_PANE3_STEP3_BACKING,
   DEFAULT_PANE3_STEP3_FIELD,
+  DEFAULT_PANE4_V1,
   type KoyasuCaseSeed,
 } from "@/lib/koyasu/schema";
 import { loadCaseStorage, saveCaseStorage } from "@/lib/koyasu/storage";
@@ -65,6 +66,7 @@ describe("caseStorageSchema pane1/pane2 後方互換", () => {
     expect(result.data.pane3_step1).toEqual(DEFAULT_PANE3_STEP1);
     expect(result.data.pane3_step2).toEqual(DEFAULT_PANE3_STEP2);
     expect(result.data.pane3_step3).toEqual(DEFAULT_PANE3_STEP3);
+    expect(result.data.pane4_v1).toEqual(DEFAULT_PANE4_V1);
   });
 
   it("部分的な pane1_intake は欠落フィールドを default で補完する", () => {
@@ -884,6 +886,239 @@ describe("loadCaseStorage / saveCaseStorage pane3_step3", () => {
     );
     expect(result.data.pane3_step3.backing).toEqual(
       DEFAULT_PANE3_STEP3_BACKING,
+    );
+  });
+});
+
+describe("loadCaseStorage / saveCaseStorage pane4_v1", () => {
+  it("Pane4 V1 を保存後に再読込しても pane3_step3 を壊さない", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane3_step3: {
+        ...DEFAULT_PANE3_STEP3,
+        what_to_try: {
+          ...DEFAULT_PANE3_STEP3_FIELD,
+          value: "維持される試行",
+        },
+      },
+      pane4_v1: {
+        ...DEFAULT_PANE4_V1,
+        step1: {
+          what_was_done: "初動会議で役割を記録した",
+          what_differed: "実務担当が代理になった",
+        },
+        step2: {
+          execution_status: "partial",
+          what_was_achieved: "期限だけ決まった",
+          unexpected: "支援者が不在だった",
+        },
+        step3: {
+          stumble_tags: ["権限不足", "判断待ち", "権限不足", "不明なタグ"],
+          what_worked: "記録フォーマットは使えた",
+          what_blocked: "部門間の判断が止まっていた",
+          new_gap: "支援責任者が不在のときの代替経路",
+        },
+        step4: {
+          reviews: [
+            {
+              status: "partially_supported",
+              rationale: "決裁が閉じない場面は再現した",
+            },
+            { ...DEFAULT_PANE4_V1.step4.reviews[1] },
+            { ...DEFAULT_PANE4_V1.step4.reviews[2] },
+          ],
+        },
+        step5: {
+          next_direction: "revise_baby_step",
+          next_gap: "判断待ちを解消する経路",
+          next_move: "支援者不在時の代理を先に決める",
+          return_destination: "pane2",
+        },
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane3_step3.what_to_try.value).toBe("維持される試行");
+    expect(loaded.pane4_v1.step1.what_was_done).toBe(
+      "初動会議で役割を記録した",
+    );
+    expect(loaded.pane4_v1.step2.execution_status).toBe("partial");
+    expect(loaded.pane4_v1.step3.stumble_tags).toEqual([
+      "権限不足",
+      "判断待ち",
+    ]);
+    expect(loaded.pane4_v1.step4.reviews[0]).toEqual({
+      status: "partially_supported",
+      rationale: "決裁が閉じない場面は再現した",
+    });
+    expect(loaded.pane4_v1.step5.next_direction).toBe("revise_baby_step");
+    expect(loaded.pane4_v1.step5.return_destination).toBe("pane2");
+  });
+
+  it("pane4_v1 省略保存時は既存 localStorage の値を維持する", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane4_v1: {
+        ...DEFAULT_PANE4_V1,
+        step5: {
+          ...DEFAULT_PANE4_V1.step5,
+          next_gap: "維持される次のGAP",
+        },
+      },
+    });
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane3_step3: {
+        ...DEFAULT_PANE3_STEP3,
+        what_to_try: {
+          ...DEFAULT_PANE3_STEP3_FIELD,
+          value: "後から保存した試行",
+        },
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane4_v1.step5.next_gap).toBe("維持される次のGAP");
+    expect(loaded.pane3_step3.what_to_try.value).toBe("後から保存した試行");
+  });
+
+  it("旧 koyasu:case:v1（pane4_v1 なし）でも default が補われる", () => {
+    const result = caseStorageSchema.safeParse(legacyCaseV1);
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane4_v1).toEqual(DEFAULT_PANE4_V1);
+  });
+
+  it("不完全な pane4_v1 でも欠けたフィールドを default で補う", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane4_v1: {
+        step1: { what_was_done: "実施だけ記録" },
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane4_v1.step1).toEqual({
+      what_was_done: "実施だけ記録",
+      what_differed: "",
+    });
+    expect(result.data.pane4_v1.step2).toEqual(DEFAULT_PANE4_V1.step2);
+    expect(result.data.pane4_v1.step4.reviews).toHaveLength(3);
+    expect(result.data.pane4_v1.resistance_observation).toEqual(
+      DEFAULT_PANE4_V1.resistance_observation,
+    );
+    expect(result.data.pane4_v1.multi_perspective_review).toEqual(
+      DEFAULT_PANE4_V1.multi_perspective_review,
+    );
+    expect(result.data.pane4_v1.learning_memo).toEqual(
+      DEFAULT_PANE4_V1.learning_memo,
+    );
+  });
+
+  it("旧 pane4_v1.step5 に return_destination が無くても default で補う", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane4_v1: {
+        step5: {
+          next_direction: "retry_same",
+          next_gap: "既存のGAP",
+          next_move: "既存の一手",
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane4_v1.step5).toEqual({
+      next_direction: "retry_same",
+      return_destination: "",
+      next_gap: "既存のGAP",
+      next_move: "既存の一手",
+    });
+  });
+
+  it("旧 pane4_v1 に抵抗観察・多視点レビュー・戦訓が無くても default で補う", () => {
+    const result = caseStorageSchema.safeParse({
+      ...legacyCaseV1,
+      pane4_v1: {
+        step1: {
+          what_was_done: "実施だけ",
+          what_differed: "",
+        },
+      },
+    });
+    expect(result.success).toBe(true);
+    if (!result.success) return;
+    expect(result.data.pane4_v1.resistance_observation.observed).toBe("");
+    expect(result.data.pane4_v1.multi_perspective_review.stability.status).toBe(
+      "",
+    );
+    expect(result.data.pane4_v1.multi_perspective_review.final_decision).toBe(
+      "",
+    );
+    expect(result.data.pane4_v1.learning_memo.lesson).toBe("");
+  });
+
+  it("Pane4 の抵抗観察・多視点レビュー・戦訓を保存後に再読込できる", () => {
+    window.localStorage.clear();
+
+    saveCaseStorage({
+      case_a00: "saved A00",
+      selected_phenomenon_id: "young-turnover",
+      phenomena: legacyCaseV1.phenomena,
+      pane4_v1: {
+        ...DEFAULT_PANE4_V1,
+        resistance_observation: {
+          observed: "会議で期限を決める案に慎重論が出た",
+          background: "過去に責任だけ増えた経験がある",
+          engagement_next: "先に完了条件と支援者を明示してから巻き込む",
+        },
+        multi_perspective_review: {
+          stability: {
+            status: "ok",
+            comment: "負荷は1件試行の範囲",
+          },
+          reform: {
+            status: "reconsider",
+            comment: "本丸を避けていないか確認したい",
+          },
+          standard: {
+            status: "ok",
+            comment: "Factの範囲で言える",
+          },
+          final_decision: "keep",
+          final_reason: "戻り先はPane3-Step2のままでよい",
+        },
+        learning_memo: {
+          lesson: "後ろ盾が無いと期限が閉じない",
+          conditions: "管理職が同席している会議では通用しやすい",
+          next_validation: "支援者不在時でも役割が残るか見る",
+        },
+      },
+    });
+
+    const loaded = loadCaseStorage(seed);
+    expect(loaded.pane4_v1.resistance_observation.background).toBe(
+      "過去に責任だけ増えた経験がある",
+    );
+    expect(loaded.pane4_v1.multi_perspective_review.reform.status).toBe(
+      "reconsider",
+    );
+    expect(loaded.pane4_v1.multi_perspective_review.final_decision).toBe(
+      "keep",
+    );
+    expect(loaded.pane4_v1.learning_memo.next_validation).toBe(
+      "支援者不在時でも役割が残るか見る",
     );
   });
 });

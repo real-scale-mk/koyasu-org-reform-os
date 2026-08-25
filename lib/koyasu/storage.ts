@@ -7,6 +7,7 @@ import {
   DEFAULT_PANE3_STEP1,
   DEFAULT_PANE3_STEP2,
   DEFAULT_PANE3_STEP3,
+  DEFAULT_PANE4_V1,
   learningStorageSchema,
   type CaseStorage,
   type CaseStorageWrite,
@@ -58,6 +59,7 @@ export function loadCaseStorage(seed: KoyasuCaseSeed): CaseStorage {
       pane3_step1: DEFAULT_PANE3_STEP1,
       pane3_step2: DEFAULT_PANE3_STEP2,
       pane3_step3: DEFAULT_PANE3_STEP3,
+      pane4_v1: DEFAULT_PANE4_V1,
     };
   }
 
@@ -82,6 +84,7 @@ export function loadCaseStorage(seed: KoyasuCaseSeed): CaseStorage {
     pane3_step1: stored.pane3_step1,
     pane3_step2: stored.pane3_step2,
     pane3_step3: stored.pane3_step3,
+    pane4_v1: stored.pane4_v1,
   };
 }
 
@@ -111,7 +114,7 @@ export function loadLearningStorage(seed: KoyasuCaseSeed): LearningStorage {
 
 /**
  * pane1_intake 省略時は既存 localStorage の値を維持し、無ければ default。
- * pane2_step1 / pane2_step2 / pane2_step3 / pane3_step1 / pane3_step2 / pane3_step3 も同様に維持し、
+ * pane2_step1 / pane2_step2 / pane2_step3 / pane3_step1 / pane3_step2 / pane3_step3 / pane4_v1 も同様に維持し、
  * 既存ワークスペース保存との後方互換を保つ。
  */
 export function saveCaseStorage(data: CaseStorageWrite): void {
@@ -135,6 +138,8 @@ export function saveCaseStorage(data: CaseStorageWrite): void {
     data.pane3_step2 ?? existing?.pane3_step2 ?? DEFAULT_PANE3_STEP2;
   const pane3_step3 =
     data.pane3_step3 ?? existing?.pane3_step3 ?? DEFAULT_PANE3_STEP3;
+  const pane4_v1 =
+    data.pane4_v1 ?? existing?.pane4_v1 ?? DEFAULT_PANE4_V1;
 
   const next: CaseStorage = {
     case_a00: data.case_a00,
@@ -147,6 +152,7 @@ export function saveCaseStorage(data: CaseStorageWrite): void {
     pane3_step1,
     pane3_step2,
     pane3_step3,
+    pane4_v1,
   };
 
   window.localStorage.setItem(CASE_STORAGE_KEY, JSON.stringify(next));

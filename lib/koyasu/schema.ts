@@ -645,6 +645,353 @@ export type Pane3Step3Field = z.infer<typeof pane3Step3FieldSchema>;
 export type Pane3Step3Backing = z.infer<typeof pane3Step3BackingSchema>;
 export type Pane3Step3 = z.infer<typeof pane3Step3Schema>;
 
+/**
+ * Pane4 V1: BABY STEP 実行から学び、構造仮説と介入仮説を見直して次の一手へ戻す。
+ * 成功証明ではなく、うまくいかなかったことも学習データとして扱う。
+ * 旧 SKILL 資産化 seed とは別構造（legacy は削除しない）。
+ */
+export const PANE4_V1_EXECUTION_STATUS_VALUES = [
+  "done",
+  "partial",
+  "not_done",
+] as const;
+
+export type Pane4V1ExecutionStatus =
+  (typeof PANE4_V1_EXECUTION_STATUS_VALUES)[number];
+export type Pane4V1ExecutionStatusOrEmpty = Pane4V1ExecutionStatus | "";
+
+export const PANE4_V1_HYPOTHESIS_REVIEW_STATUS_VALUES = [
+  "supported",
+  "partially_supported",
+  "undecided",
+  "needs_revision",
+] as const;
+
+export type Pane4V1HypothesisReviewStatus =
+  (typeof PANE4_V1_HYPOTHESIS_REVIEW_STATUS_VALUES)[number];
+export type Pane4V1HypothesisReviewStatusOrEmpty =
+  | Pane4V1HypothesisReviewStatus
+  | "";
+
+export const PANE4_V1_NEXT_DIRECTION_VALUES = [
+  "retry_same",
+  "revise_baby_step",
+  "revise_structure",
+] as const;
+
+export type Pane4V1NextDirection =
+  (typeof PANE4_V1_NEXT_DIRECTION_VALUES)[number];
+export type Pane4V1NextDirectionOrEmpty = Pane4V1NextDirection | "";
+
+export const PANE4_V1_EXECUTION_STATUS_LABELS: Record<
+  Pane4V1ExecutionStatus,
+  string
+> = {
+  done: "実行できた",
+  partial: "一部実行できた",
+  not_done: "実行できなかった",
+};
+
+export const PANE4_V1_HYPOTHESIS_REVIEW_STATUS_LABELS: Record<
+  Pane4V1HypothesisReviewStatus,
+  string
+> = {
+  supported: "支持された",
+  partially_supported: "一部支持された",
+  undecided: "まだ判断できない",
+  needs_revision: "見直しが必要",
+};
+
+export const PANE4_V1_NEXT_DIRECTION_LABELS: Record<
+  Pane4V1NextDirection,
+  string
+> = {
+  retry_same: "同じBABY STEPをもう一度試す",
+  revise_baby_step: "BABY STEPを修正して試す",
+  revise_structure: "構造仮説／介入場所を見直す",
+};
+
+export const PANE4_V1_RETURN_DESTINATION_VALUES = [
+  "pane1",
+  "pane2",
+  "pane3_step1",
+  "pane3_step2",
+  "pane3_step3",
+  "next_baby_step",
+] as const;
+
+export type Pane4V1ReturnDestination =
+  (typeof PANE4_V1_RETURN_DESTINATION_VALUES)[number];
+export type Pane4V1ReturnDestinationOrEmpty = Pane4V1ReturnDestination | "";
+
+export const PANE4_V1_RETURN_DESTINATION_DEFS = [
+  {
+    id: "pane1",
+    action: "現象・GAPの捉え方を見直す",
+    destination: "Pane1",
+  },
+  {
+    id: "pane2",
+    action: "構造仮説を見直す",
+    destination: "Pane2",
+  },
+  {
+    id: "pane3_step1",
+    action: "介入場所を見直す",
+    destination: "Pane3-Step1",
+  },
+  {
+    id: "pane3_step2",
+    action: "役割・権限・後ろ盾を見直す",
+    destination: "Pane3-Step2",
+  },
+  {
+    id: "pane3_step3",
+    action: "BABY STEPの内容を見直す",
+    destination: "Pane3-Step3",
+  },
+  {
+    id: "next_baby_step",
+    action: "方向は妥当。次の実験へ進む",
+    destination: "次のBABY STEP",
+  },
+] as const;
+
+const pane4V1ExecutionStatusSchema = z
+  .union([z.enum(PANE4_V1_EXECUTION_STATUS_VALUES), z.literal("")])
+  .default("");
+
+const pane4V1HypothesisReviewStatusSchema = z
+  .union([z.enum(PANE4_V1_HYPOTHESIS_REVIEW_STATUS_VALUES), z.literal("")])
+  .default("");
+
+const pane4V1NextDirectionSchema = z
+  .union([z.enum(PANE4_V1_NEXT_DIRECTION_VALUES), z.literal("")])
+  .default("");
+
+const pane4V1ReturnDestinationSchema = z
+  .union([z.enum(PANE4_V1_RETURN_DESTINATION_VALUES), z.literal("")])
+  .default("");
+
+export const PANE4_V1_LENS_STATUS_VALUES = ["ok", "reconsider"] as const;
+export type Pane4V1LensStatus = (typeof PANE4_V1_LENS_STATUS_VALUES)[number];
+export type Pane4V1LensStatusOrEmpty = Pane4V1LensStatus | "";
+
+export const PANE4_V1_LENS_STATUS_LABELS: Record<Pane4V1LensStatus, string> = {
+  ok: "問題なし",
+  reconsider: "再考が必要",
+};
+
+export const PANE4_V1_FINAL_DECISION_VALUES = ["keep", "reconsider"] as const;
+export type Pane4V1FinalDecision =
+  (typeof PANE4_V1_FINAL_DECISION_VALUES)[number];
+export type Pane4V1FinalDecisionOrEmpty = Pane4V1FinalDecision | "";
+
+export const PANE4_V1_FINAL_DECISION_LABELS: Record<
+  Pane4V1FinalDecision,
+  string
+> = {
+  keep: "当初の戻り先で進める",
+  reconsider: "戻り先を再検討する",
+};
+
+export const PANE4_V1_REVIEW_LENS_DEFS = [
+  {
+    id: "stability",
+    label: "体制・安定視点",
+    question:
+      "この戻り方や次の一手は、現場の混乱、既存の責任体系、実行負荷や組織の安定性を過小評価していないか？",
+  },
+  {
+    id: "reform",
+    label: "改革推進視点",
+    question:
+      "抵抗や失敗を恐れるあまり、本来変えるべき構造から逃げたBABY STEPになっていないか？",
+  },
+  {
+    id: "standard",
+    label: "実務・標準視点",
+    question:
+      "今回得られたFactから、本当にその結論まで言えるのか？別の説明可能性は残っていないか？",
+  },
+] as const;
+
+export type Pane4V1ReviewLensId =
+  (typeof PANE4_V1_REVIEW_LENS_DEFS)[number]["id"];
+
+const pane4V1LensStatusSchema = z
+  .union([z.enum(PANE4_V1_LENS_STATUS_VALUES), z.literal("")])
+  .default("");
+
+const pane4V1FinalDecisionSchema = z
+  .union([z.enum(PANE4_V1_FINAL_DECISION_VALUES), z.literal("")])
+  .default("");
+
+export const DEFAULT_PANE4_V1_LENS = {
+  status: "" as Pane4V1LensStatusOrEmpty,
+  comment: "",
+};
+
+export const DEFAULT_PANE4_V1_REVIEW = {
+  status: "" as Pane4V1HypothesisReviewStatusOrEmpty,
+  rationale: "",
+};
+
+export const DEFAULT_PANE4_V1_REVIEWS = [
+  { ...DEFAULT_PANE4_V1_REVIEW },
+  { ...DEFAULT_PANE4_V1_REVIEW },
+  { ...DEFAULT_PANE4_V1_REVIEW },
+] as const;
+
+export const DEFAULT_PANE4_V1 = {
+  step1: {
+    what_was_done: "",
+    what_differed: "",
+  },
+  step2: {
+    execution_status: "" as Pane4V1ExecutionStatusOrEmpty,
+    what_was_achieved: "",
+    unexpected: "",
+  },
+  step3: {
+    stumble_tags: [] as string[],
+    what_worked: "",
+    what_blocked: "",
+    new_gap: "",
+  },
+  step4: {
+    reviews: [
+      { ...DEFAULT_PANE4_V1_REVIEW },
+      { ...DEFAULT_PANE4_V1_REVIEW },
+      { ...DEFAULT_PANE4_V1_REVIEW },
+    ],
+  },
+  step5: {
+    next_direction: "" as Pane4V1NextDirectionOrEmpty,
+    return_destination: "" as Pane4V1ReturnDestinationOrEmpty,
+    next_gap: "",
+    next_move: "",
+  },
+  resistance_observation: {
+    observed: "",
+    background: "",
+    engagement_next: "",
+  },
+  multi_perspective_review: {
+    stability: { ...DEFAULT_PANE4_V1_LENS },
+    reform: { ...DEFAULT_PANE4_V1_LENS },
+    standard: { ...DEFAULT_PANE4_V1_LENS },
+    final_decision: "" as Pane4V1FinalDecisionOrEmpty,
+    final_reason: "",
+  },
+  learning_memo: {
+    lesson: "",
+    conditions: "",
+    next_validation: "",
+  },
+};
+
+const pane4V1StumbleTagSchema = z.enum(PANE3_STEP3_STUMBLE_OBSERVATION_POINTS);
+
+const pane4V1ReviewSchema = z.object({
+  status: pane4V1HypothesisReviewStatusSchema,
+  rationale: z.string().default(""),
+});
+
+const pane4V1LensSchema = z.object({
+  status: pane4V1LensStatusSchema,
+  comment: z.string().default(""),
+});
+
+export const pane4V1Schema = z.object({
+  step1: z
+    .object({
+      what_was_done: z.string().default(""),
+      what_differed: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.step1 }),
+  step2: z
+    .object({
+      execution_status: pane4V1ExecutionStatusSchema,
+      what_was_achieved: z.string().default(""),
+      unexpected: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.step2 }),
+  step3: z
+    .object({
+      stumble_tags: z
+        .array(z.string())
+        .default([])
+        .transform((items) => {
+          const selected = new Set<string>();
+          for (const item of items) {
+            const parsed = pane4V1StumbleTagSchema.safeParse(item);
+            if (parsed.success) selected.add(parsed.data);
+          }
+          return PANE3_STEP3_STUMBLE_OBSERVATION_POINTS.filter((point) =>
+            selected.has(point),
+          );
+        }),
+      what_worked: z.string().default(""),
+      what_blocked: z.string().default(""),
+      new_gap: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.step3 }),
+  step4: z
+    .object({
+      reviews: z
+        .array(pane4V1ReviewSchema)
+        .default([...DEFAULT_PANE4_V1_REVIEWS])
+        .transform((items) =>
+          [...items, ...DEFAULT_PANE4_V1_REVIEWS]
+            .slice(0, 3)
+            .map((item) => pane4V1ReviewSchema.parse(item)),
+        ),
+    })
+    .default({ reviews: [...DEFAULT_PANE4_V1_REVIEWS] }),
+  step5: z
+    .object({
+      next_direction: pane4V1NextDirectionSchema,
+      return_destination: pane4V1ReturnDestinationSchema,
+      next_gap: z.string().default(""),
+      next_move: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.step5 }),
+  resistance_observation: z
+    .object({
+      observed: z.string().default(""),
+      background: z.string().default(""),
+      engagement_next: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.resistance_observation }),
+  multi_perspective_review: z
+    .object({
+      stability: pane4V1LensSchema.default({ ...DEFAULT_PANE4_V1_LENS }),
+      reform: pane4V1LensSchema.default({ ...DEFAULT_PANE4_V1_LENS }),
+      standard: pane4V1LensSchema.default({ ...DEFAULT_PANE4_V1_LENS }),
+      final_decision: pane4V1FinalDecisionSchema,
+      final_reason: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.multi_perspective_review }),
+  learning_memo: z
+    .object({
+      lesson: z.string().default(""),
+      conditions: z.string().default(""),
+      next_validation: z.string().default(""),
+    })
+    .default({ ...DEFAULT_PANE4_V1.learning_memo }),
+});
+
+export type Pane4V1 = z.infer<typeof pane4V1Schema>;
+export type Pane4V1Review = z.infer<typeof pane4V1ReviewSchema>;
+export type Pane4V1MultiPerspectivePatch = {
+  stability?: Partial<Pane4V1["multi_perspective_review"]["stability"]>;
+  reform?: Partial<Pane4V1["multi_perspective_review"]["reform"]>;
+  standard?: Partial<Pane4V1["multi_perspective_review"]["standard"]>;
+  final_decision?: Pane4V1["multi_perspective_review"]["final_decision"];
+  final_reason?: string;
+};
+
 export const caseStorageSchema = z.object({
   case_a00: z.string(),
   selected_phenomenon_id: z.string(),
@@ -659,11 +1006,12 @@ export const caseStorageSchema = z.object({
   pane3_step1: pane3Step1Schema.default(DEFAULT_PANE3_STEP1),
   pane3_step2: pane3Step2Schema.default(DEFAULT_PANE3_STEP2),
   pane3_step3: pane3Step3Schema.default(DEFAULT_PANE3_STEP3),
+  pane4_v1: pane4V1Schema.default(DEFAULT_PANE4_V1),
 });
 
 export type CaseStorage = z.infer<typeof caseStorageSchema>;
 
-/** Workspace 等、pane1/pane2/pane3 の省略書き込み時も storage 側で保持/default する */
+/** Workspace 等、pane1/pane2/pane3/pane4 の省略書き込み時も storage 側で保持/default する */
 export type CaseStorageWrite = Omit<
   CaseStorage,
   | "pane1_intake"
@@ -673,6 +1021,7 @@ export type CaseStorageWrite = Omit<
   | "pane3_step1"
   | "pane3_step2"
   | "pane3_step3"
+  | "pane4_v1"
 > & {
   pane1_intake?: Pane1Intake;
   pane2_step1?: Pane2Step1;
@@ -681,6 +1030,7 @@ export type CaseStorageWrite = Omit<
   pane3_step1?: Pane3Step1;
   pane3_step2?: Pane3Step2;
   pane3_step3?: Pane3Step3;
+  pane4_v1?: Pane4V1;
 };
 
 export const learningStorageSchema = z.object({
